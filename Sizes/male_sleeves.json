@@ -1,0 +1,15 @@
+{
+    "sizes":[
+        {"name": "2xsmall", "width": 26, "height": 7.5},
+        {"name": "xsmall", "width": 28, "height": 8},
+        {"name": "small", "width": 30, "height": 8.5},
+        {"name": "medium", "width": 32, "height": 9},
+        {"name": "large", "width": 34, "height": 9.5},
+        {"name": "xlarge", "width": 36, "height": 10},
+        {"name": "2xlarge", "width": 38, "height": 10.5},
+        {"name": "3xlarge", "width": 40, "height": 11},
+        {"name": "4xlarge", "width": 42, "height": 11.5},
+        {"name": "5xlarge", "width": 44, "height": 12}
+    ] 
+    
+}
