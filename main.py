@@ -36,7 +36,7 @@ with Session(str(psd_path), "open") as ps:
     columns = df.columns
 
     #photoshop settings
-    options = ps.JPEGSaveOptions(quality=1)
+    options = ps.JPEGSaveOptions(quality=12)
     ps.app.preferences.rulerUnits = ps.Units.Inches
 
     #color mode
