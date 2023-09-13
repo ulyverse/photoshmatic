@@ -10,12 +10,9 @@ from pathlib import Path
 from sizes import Size
 
 class PhotoshopFiller:
-    def __init__(self, photoshop_path:str, csv_path:str, json_path:str) -> None:
-        self._init_photoshop(photoshop_path)
-        self._init_sizes(json_path)
-        self._init_dataframe(csv_path)
-
-    def start(self):
+    def start(self, isRgb:bool = True):
+        self._ps_change_colormode(isRgb)
+        
         for row in range(len(self.df.index)):
             name = self.app.activeDocument.name
             self.app.activeDocument.duplicate(f"{name} - placeholder")
@@ -36,6 +33,13 @@ class PhotoshopFiller:
             self.app.activeDocument.saveAs(path, self._jpg_savepref)
             self.app.activeDocument.close(ps.SaveOptions.DoNotSaveChanges)
 
+    def print_sizes(self):
+        for size in self.sizes:
+            print(f"{size.width} {size.height} {size.name}")
+
+    def print_df(self):
+        print(self.df)
+
     def _change_doc_size(self, size_name) -> bool:
         size_found = False
         for size in self.sizes:
@@ -51,8 +55,13 @@ class PhotoshopFiller:
             if layer.name == layerName:
                 layer.textItem.contents = content
         
-    def ps_change_colormode(self, isRgb: bool):
+    def _ps_change_colormode(self, isRgb: bool):
         self.app.activeDocument.changeMode(ps.ChangeMode.ConvertToRGB if isRgb else ps.ChangeMode.ConvertToCMYK)
+
+    def __init__(self, photoshop_path:str, csv_path:str, json_path:str) -> None:
+        self._init_photoshop(photoshop_path)
+        self._init_sizes(json_path)
+        self._init_dataframe(csv_path)
 
     def _init_photoshop(self, ps_path:str):
         self.app = ps.Application()
@@ -72,20 +81,11 @@ class PhotoshopFiller:
 
     def _init_dataframe(self, csv_path):
         self.df = pd.read_csv(csv_path, dtype={'number':str})
-
-    def print_sizes(self):
-        for size in self.sizes:
-            print(f"{size.width} {size.height} {size.name}")
-
-    def print_df(self):
-        print(self.df)
         
         
 
 psFiller = PhotoshopFiller(photoshop_path=r"C:\Users\johna\Desktop\Photoshop scripting test\Test1\practice2.psd", 
                        csv_path=r"C:\Users\johna\Desktop\Photoshop scripting test\Test1\customer info.csv",
                        json_path=r"C:\Users\johna\Desktop\Photoshamatic\Sizes\upper_jersey.json")
-
-psFiller.start()
 
 
