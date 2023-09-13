@@ -10,9 +10,7 @@ from pathlib import Path
 from sizes import Size
 
 class PhotoshopFiller:
-    def start(self, isRgb:bool = True):
-        self._ps_change_colormode(isRgb)
-        
+    def start(self):
         for row in range(len(self.df.index)):
             name = self.app.activeDocument.name
             self.app.activeDocument.duplicate(f"{name} - placeholder")
@@ -55,7 +53,7 @@ class PhotoshopFiller:
             if layer.name == layerName:
                 layer.textItem.contents = content
         
-    def _ps_change_colormode(self, isRgb: bool):
+    def ps_change_colormode(self, isRgb: bool):
         self.app.activeDocument.changeMode(ps.ChangeMode.ConvertToRGB if isRgb else ps.ChangeMode.ConvertToCMYK)
 
     def __init__(self, photoshop_path:str, csv_path:str, json_path:str) -> None:
@@ -84,8 +82,6 @@ class PhotoshopFiller:
         
         
 
-psFiller = PhotoshopFiller(photoshop_path=r"C:\Users\johna\Desktop\Photoshop scripting test\Test1\practice2.psd", 
-                       csv_path=r"C:\Users\johna\Desktop\Photoshop scripting test\Test1\customer info.csv",
-                       json_path=r"C:\Users\johna\Desktop\Photoshamatic\Sizes\upper_jersey.json")
+
 
 
