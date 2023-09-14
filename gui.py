@@ -1,33 +1,55 @@
+#built-in modules
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import BooleanVar
 from tkinter import filedialog
-
-from utils import PhotoshopFiller
+from tkinter import messagebox
+import threading
 
 import os
 from pathlib import Path
 
+#custom module
+from utils import PhotoshopFiller
+
 
 class Window:
     def __init__(self) -> None:
-        self.root = tk.Tk()
-        self.font_style = ('Arial', 12)
+        self.ps_filler = PhotoshopFiller()
 
-        self.init_window()
-        self.init_widgets()
+    def run(self):
+        self._init_window()
+        self._init_widgets()
         self.root.mainloop()
 
-    def init_window(self):
+    def _start(self):
+        if self.lblPhotoshopPath['text'] == "":
+            self._mbox_error("Please select a photshop document")
+        elif self.lblCsvPath['text'] == "":
+            self._mbox_error("Please select a csv file")
+        elif self.cmbSizes.get() == "Select Size":
+            self._mbox_error("Please select a size")
+        else:
+            self._select_sizes()
+            self.progressBar.stop()
+            self._txt_append_text(self.txtResult, "Running script...\n")
+            log = self.ps_filler.start()
+
+            if log != "":
+                self._txt_append_text(self.txtResult, log)
+
+    def _init_window(self):
+        self.font_style = ('Arial', 12)
+        self.root = tk.Tk()
         self.root.minsize(600,400)
         self.root.geometry("700x400")
         self.root.title("Testing")
         self.root['pady'] = 30
         self.root['padx'] = 30
 
-        self.conf_grid()
+        self._conf_grid()
 
-    def conf_grid(self):
+    def _conf_grid(self):
         self.root.columnconfigure(0, weight=1)
         self.root.columnconfigure(1, weight=2)
         self.root.columnconfigure(2, weight=2)
@@ -38,19 +60,19 @@ class Window:
         self.root.rowconfigure(3, pad=15)
         self.root.rowconfigure(4, weight = 4)
 
-    def init_widgets(self):
+    def _init_widgets(self):
         #1
         self.btnPhotoshop = tk.Button(self.root, text="Select Photoshop", command=self._select_psd, font=self.font_style)
-        self.lblPhotoshopPath = tk.Label(self.root, text=r"practice.psd", font=self.font_style)
+        self.lblPhotoshopPath = tk.Label(self.root, font=self.font_style)
 
         #2
         self.btnCsv = tk.Button(self.root, text="Select Csv", command=self._select_csv, font=self.font_style)
-        self.lblCsvPath = tk.Label(self.root, text=r"data.csv", font=self.font_style)
+        self.lblCsvPath = tk.Label(self.root, font=self.font_style)
 
         #3
         self.cmbSizes = ttk.Combobox(self.root, font=self.font_style)
         self.cmbSizes.state(["readonly"])
-        self.populate_cmbSizes()
+        self._populate_cmbSizes()
 
         self.grpColorModes = tk.Frame(self.root)
         self.colorModes = True
@@ -65,12 +87,12 @@ class Window:
 
         #5
         self.txtResult = tk.Text(self.root)
-        self.txtResult.insert(tk.END,"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam ut purus varius, mollis nisi ut, euismod mi. In tempor purus ut dictum fermentum. Sed vulputate et sapien at pretium. Phasellus at arcu sit amet nunc hendrerit ultricies. Morbi dapibus auctor malesuada. Nam lacinia condimentum elit, in malesuada elit luctus sit amet. Phasellus in elit non nibh mollis porttitor. Morbi quis eros id orci sodales finibus eu nec neque. Donec ex ante, eleifend at congue et, volutpat eget quam. Duis elit ligula, cursus at vehicula eu, dictum vitae nisl. Cras molestie erat vel vestibulum vehicula. Nunc quis dignissim metus. Sed porta nec leo ac euismod. Sed tincidunt elit vitae quam tincidunt, ac ultricies nisi mollis.")
         self.txtResult['state'] = "disabled"
+        self._populate_txtResult()
 
-        self.put_widgets()
+        self._put_widgets()
 
-    def put_widgets(self):
+    def _put_widgets(self):
         #1
         self.btnPhotoshop.grid(row=0, column=0, sticky="WE", padx=(0,30))
         self.lblPhotoshopPath.grid(row=0, column=1, sticky="W", columnspan=2)
@@ -94,24 +116,48 @@ class Window:
 
     def _select_psd(self):
         psd_path = filedialog.askopenfilename(title="Select Photoshop Document", filetypes=[("psd files", "*.psd")])
-        self.lblPhotoshopPath['text'] = psd_path
+        if psd_path != "":
+            self.lblPhotoshopPath['text'] = self._shorten_path(psd_path)
+            self.ps_filler.init_photoshop(psd_path)
+
+            if self.ps_filler.get_isRGB():
+                self.rbtnRGB.select()
+            else:
+                self.rbtnCMYK.select()
 
     def _select_csv(self):
         csv_path = filedialog.askopenfilename(title="Select CSV File", filetypes=[("csv files", "*.csv")])
-        self.lblCsvPath['text'] = csv_path
+        if csv_path != "":
+            self.lblCsvPath['text'] = self._shorten_path(csv_path)
+            self.ps_filler.init_dataframe(csv_path)
 
-    def _start(self):
-        print(self.cmbSizes.get())
+    def _select_sizes(self):
+        json_path = f"{Path(__file__).parent}\sizes\{self.cmbSizes.get()}.json"
+        self.ps_filler.init_sizes(json_path)
+        self.ps_filler.print_sizes()
 
+    def _shorten_path(self, raw_path:str) -> str:
+        path = Path(raw_path)
+        return f"{raw_path[:2]}/.../{path.parent.name}/{path.name}"
 
-    def populate_cmbSizes(self):
+    def _mbox_error(self,message:str, title:str = None):
+        messagebox.showerror(title if title != None else "Warning!", message)
+
+    def _populate_cmbSizes(self):
         sizes = ['Select Size']
-        for size in os.listdir(str(Path(__file__).parent) + "/Sizes"):
+        for size in os.listdir(str(Path(__file__).parent) + "/sizes"):
             sizes.append(size[:-5])
         self.cmbSizes['values'] = sizes
         self.cmbSizes.current(0)
 
-gui = Window()
+    def _populate_txtResult(self):
+        self._txt_append_text(self.txtResult, "REMINDERS: \n")
+        self._txt_append_text(self.txtResult, " - layers inside a folder cannot be altered\n")
+        self._txt_append_text(self.txtResult, " - don't click on another tab in photoshop while the script is running\n")
+        self._txt_append_text(self.txtResult, " - be wary of the color modes radiobutton\n")
+        self._txt_append_text(self.txtResult, " - to configuration settings view settings.json\n")
 
-print("TEST")
-print(gui.lblCsvPath['text'])
+    def _txt_append_text(self, txt: tk.Text, content:str):
+        txt['state'] = "normal"
+        txt.insert(tk.END, content)
+        txt['state'] = "disabled"
