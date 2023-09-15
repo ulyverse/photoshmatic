@@ -11,7 +11,7 @@ from tkinter import ttk
 from sizes import Size
 
 class PhotoshopFiller:
-    def start(self):
+    def start(self, callback):
         log = ""
         num_rows = len(self.df.index)
         for row in range(num_rows):
@@ -28,10 +28,14 @@ class PhotoshopFiller:
             size_found = self._change_doc_size(cur_row_size_name)
 
             if size_found == False:
-                log += f"#{doc_num} size not found\n"
+                log += f"#{doc_num} size incorrect/not found\n"
 
             self._app.activeDocument.saveAs(path, self._jpg_savepref)
             self._app.activeDocument.close(ps.SaveOptions.DoNotSaveChanges)
+
+            progress = doc_num/num_rows*100
+            if callback != None:
+                callback(progress)
 
         return log
 
