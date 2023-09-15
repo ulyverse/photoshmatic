@@ -11,12 +11,13 @@ from tkinter import ttk
 from sizes import Size
 
 class PhotoshopFiller:
-    def start(self, callback):
+    def start(self, callback = None):
         log = ""
         num_rows = len(self.df.index)
+        psd_name = self._app.activeDocument.name
+        self._app.activeDocument.duplicate(f"{psd_name} - placeholder")
         for row in range(num_rows):
-            name = self._app.activeDocument.name
-            self._app.activeDocument.duplicate(f"{name} - placeholder")
+            savedState = self._app.activeDocument.activeHistoryState
 
             doc_num = row + 1
             path = str(self._psd_path.parent) + f"\{doc_num}"
@@ -31,12 +32,13 @@ class PhotoshopFiller:
                 log += f"#{doc_num} size incorrect/not found\n"
 
             self._app.activeDocument.saveAs(path, self._jpg_savepref)
-            self._app.activeDocument.close(ps.SaveOptions.DoNotSaveChanges)
+            self._app.activeDocument.activeHistoryState = savedState
 
             progress = doc_num/num_rows*100
             if callback != None:
                 callback(progress)
 
+        self._app.activeDocument.close(ps.SaveOptions.DoNotSaveChanges)
         return log
 
     def print_sizes(self):
@@ -60,13 +62,6 @@ class PhotoshopFiller:
         for layer in self._app.activeDocument.layers:
             if layer.name == layerName:
                 layer.textItem.contents = content
-        
-    def ps_change_colormode(self, isRgb: bool):
-        self._app.activeDocument.changeMode(ps.ChangeMode.ConvertToRGB if isRgb else ps.ChangeMode.ConvertToCMYK)
-
-    def __init__(self) -> None:
-        self._RGB_COLORMODE = "sRGB IEC61966-2.1"
-        self._CMYK_COLORMODE = "U.S. Web Coated (SWOP) v2"
 
     def init_photoshop(self, ps_path:str):
         self._app = ps.Application()
@@ -86,9 +81,6 @@ class PhotoshopFiller:
 
     def init_dataframe(self, csv_path):
         self.df = pd.read_csv(csv_path, dtype={'number':str})
-
-    def get_isRGB(self) -> bool:
-        return True if self._app.activeDocument.colorProfileName == self._RGB_COLORMODE else False
         
         
 
