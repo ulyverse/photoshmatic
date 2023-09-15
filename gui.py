@@ -48,10 +48,6 @@ class Window:
 
             messagebox.showinfo("Success", "Done")
 
-    def _set_text_settings(self):
-        self.ps_filler.text_settings = self.cmbTextSettings.get()
-
-
     def update_progress_bar(self, progress):
         self.progressBar['value'] = progress
 
@@ -60,7 +56,7 @@ class Window:
         self.root = tk.Tk()
         self.root.minsize(600,400)
         self.root.geometry("700x400")
-        self.root.title("Testing")
+        self.root.title("Photoshop CSV Filler")
         self.root['pady'] = 30
         self.root['padx'] = 30
 
@@ -154,6 +150,9 @@ class Window:
         path = Path(raw_path)
         return f"{raw_path[:2]}/.../{path.parent.name}/{path.name}"
 
+    def _set_text_settings(self):
+        self.ps_filler.text_settings = self.cmbTextSettings.get()
+
     def _mbox_error(self,message:str, title:str = None):
         messagebox.showerror(title if title != None else "Error", message)
 
@@ -170,7 +169,6 @@ class Window:
         self._txt_append_text(self.txtResult, " - layers inside a folder cannot be altered")
         self._txt_append_text(self.txtResult, " - you need to reselect csv to apply changes")
         self._txt_append_text(self.txtResult, " - don't click on another tab in photoshop while the script is running")
-        self._txt_append_text(self.txtResult, " - to configuration settings view settings.json")
 
     def _txt_refresh_text(self, txt:tk.Text):
         txt['state'] = "normal"

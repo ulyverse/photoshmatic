@@ -1,7 +1,0 @@
-{
-    "description":"Please don't tamper with the description portion, rerun the program to reflect changes",
-    "jpg_quality_description":"1 -> 12",
-    "jpg_quality":12,
-    "word_mode_description":"1: default, 2: capitalized, 3: lowercase",
-    "word_mode":1
-}
