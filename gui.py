@@ -4,7 +4,7 @@ import tkinter.ttk as ttk
 from tkinter import BooleanVar
 from tkinter import filedialog
 from tkinter import messagebox
-import threading
+import time
 
 import os
 from pathlib import Path
@@ -33,10 +33,25 @@ class Window:
             self._select_sizes()
             self.progressBar.stop()
             self._txt_append_text(self.txtResult, "Running script...\n")
+            start_time = time.time()
+
             log = self.ps_filler.start()
+
+            self._txt_append_text(self.txtResult, f"execution time: {time.time()-start_time:0.2f} seconds\n\n")
+            self.progressBar['value'] = 100
+
+            messagebox.showinfo("Success", "Done")
+
+
+            self._txt_append_text(self.txtResult, "Remarks:")
 
             if log != "":
                 self._txt_append_text(self.txtResult, log)
+            else:
+                self._txt_append_text(self.txtResult, "none")
+
+    def update_progress_bar(self, progress):
+        self.progressBar['value'] = progress
 
     def _init_window(self):
         self.font_style = ('Arial', 12)
@@ -74,13 +89,6 @@ class Window:
         self.cmbSizes.state(["readonly"])
         self._populate_cmbSizes()
 
-        self.grpColorModes = tk.Frame(self.root)
-        self.colorModes = True
-        self.rbtnRGB = tk.Radiobutton(self.grpColorModes, text="RGB", variable=self.colorModes, value=BooleanVar(value=True), font=self.font_style)
-        self.rbtnCMYK = tk.Radiobutton(self.grpColorModes, text="CMYK", variable=self.colorModes, value=BooleanVar(value=False), font=self.font_style)
-
-        self.rbtnCMYK.select()
-
         self.btnStart = tk.Button(self.root, text="START", command=self._start, font=self.font_style, width=15)
         #4
         self.progressBar = ttk.Progressbar(self.root)
@@ -103,10 +111,7 @@ class Window:
 
         #3
         self.cmbSizes.grid(row=2, column=0, sticky="WE", padx=(0,30))
-        self.grpColorModes.grid(row=2, column=1, sticky="W")
-        self.rbtnRGB.pack(side="left")
-        self.rbtnCMYK.pack(side="left", padx=20)
-        self.btnStart.grid(row=2, column=2, sticky="WE")
+        self.btnStart.grid(row=2, column=1, columnspan=2, sticky="W")
 
         #4
         self.progressBar.grid(row=3, column=0, columnspan=3, sticky="WE", pady=(20,0))
@@ -120,11 +125,6 @@ class Window:
             self.lblPhotoshopPath['text'] = self._shorten_path(psd_path)
             self.ps_filler.init_photoshop(psd_path)
 
-            if self.ps_filler.get_isRGB():
-                self.rbtnRGB.select()
-            else:
-                self.rbtnCMYK.select()
-
     def _select_csv(self):
         csv_path = filedialog.askopenfilename(title="Select CSV File", filetypes=[("csv files", "*.csv")])
         if csv_path != "":
@@ -134,7 +134,6 @@ class Window:
     def _select_sizes(self):
         json_path = f"{Path(__file__).parent}\sizes\{self.cmbSizes.get()}.json"
         self.ps_filler.init_sizes(json_path)
-        self.ps_filler.print_sizes()
 
     def _shorten_path(self, raw_path:str) -> str:
         path = Path(raw_path)
@@ -151,11 +150,16 @@ class Window:
         self.cmbSizes.current(0)
 
     def _populate_txtResult(self):
+        self._txt_refresh_text(self.txtResult)
         self._txt_append_text(self.txtResult, "REMINDERS: \n")
         self._txt_append_text(self.txtResult, " - layers inside a folder cannot be altered\n")
         self._txt_append_text(self.txtResult, " - don't click on another tab in photoshop while the script is running\n")
-        self._txt_append_text(self.txtResult, " - be wary of the color modes radiobutton\n")
         self._txt_append_text(self.txtResult, " - to configuration settings view settings.json\n")
+
+    def _txt_refresh_text(self, txt:tk.Text):
+        txt['state'] = "normal"
+        txt.delete("1.0", tk.END)
+        txt['state'] = "disabled"
 
     def _txt_append_text(self, txt: tk.Text, content:str):
         txt['state'] = "normal"
