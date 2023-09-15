@@ -1,7 +1,6 @@
 #built-in modules
 import tkinter as tk
 import tkinter.ttk as ttk
-from tkinter import BooleanVar
 from tkinter import filedialog
 from tkinter import messagebox
 import time
@@ -31,24 +30,27 @@ class Window:
             self._mbox_error("Please select a size")
         else:
             self._select_sizes()
+            self._set_text_settings()
             self.progressBar.stop()
-            self._txt_append_text(self.txtResult, "Running script...\n")
+            self._populate_txtResult()
+            self._txt_append_text(self.txtResult, "Running script...")
             start_time = time.time()
 
             log = self.ps_filler.start()
 
-            self._txt_append_text(self.txtResult, f"execution time: {time.time()-start_time:0.2f} seconds\n\n")
+            self._txt_append_text(self.txtResult, f"Execution time: {time.time()-start_time:0.2f} seconds\n")
             self.progressBar['value'] = 100
-
-            messagebox.showinfo("Success", "Done")
-
 
             self._txt_append_text(self.txtResult, "Remarks:")
 
             if log != "":
                 self._txt_append_text(self.txtResult, log)
-            else:
-                self._txt_append_text(self.txtResult, "none")
+
+            messagebox.showinfo("Success", "Done")
+
+    def _set_text_settings(self):
+        self.ps_filler.text_settings = self.cmbTextSettings.get()
+
 
     def update_progress_bar(self, progress):
         self.progressBar['value'] = progress
@@ -89,6 +91,18 @@ class Window:
         self.cmbSizes.state(["readonly"])
         self._populate_cmbSizes()
 
+        self.grpTextSettings = tk.Frame(self.root)
+
+        self.lblTextSettings = tk.Label(self.grpTextSettings, text="Text Transform: ", font=self.font_style)
+        self.lblTextSettings.pack(side="left")
+
+        self.cmbTextSettings = ttk.Combobox(self.grpTextSettings, font=self.font_style)
+        self.cmbTextSettings.state(["readonly"])
+        self.cmbTextSettings['values'] = ['default','uppercase', 'lowercase', 'capitalize']
+        self.cmbTextSettings.current(0)
+        self.cmbTextSettings.pack(side="left")
+        
+
         self.btnStart = tk.Button(self.root, text="START", command=self._start, font=self.font_style, width=15)
         #4
         self.progressBar = ttk.Progressbar(self.root)
@@ -111,7 +125,8 @@ class Window:
 
         #3
         self.cmbSizes.grid(row=2, column=0, sticky="WE", padx=(0,30))
-        self.btnStart.grid(row=2, column=1, columnspan=2, sticky="W")
+        self.grpTextSettings.grid(row=2, column=1, sticky="WE", padx=(0,30))
+        self.btnStart.grid(row=2, column=2, sticky="WE")
 
         #4
         self.progressBar.grid(row=3, column=0, columnspan=3, sticky="WE", pady=(20,0))
@@ -120,7 +135,7 @@ class Window:
         self.txtResult.grid(row=4, column=0, columnspan=3, sticky="NEWS")
 
     def _select_psd(self):
-        psd_path = filedialog.askopenfilename(title="Select Photoshop Document", filetypes=[("psd files", "*.psd")])
+        psd_path = filedialog.askopenfilename(title="Select Photoshop Document", filetypes=[("psd files", "*.psd *.tif")])
         if psd_path != "":
             self.lblPhotoshopPath['text'] = self._shorten_path(psd_path)
             self.ps_filler.init_photoshop(psd_path)
@@ -140,7 +155,7 @@ class Window:
         return f"{raw_path[:2]}/.../{path.parent.name}/{path.name}"
 
     def _mbox_error(self,message:str, title:str = None):
-        messagebox.showerror(title if title != None else "Warning!", message)
+        messagebox.showerror(title if title != None else "Error", message)
 
     def _populate_cmbSizes(self):
         sizes = ['Select Size']
@@ -151,10 +166,11 @@ class Window:
 
     def _populate_txtResult(self):
         self._txt_refresh_text(self.txtResult)
-        self._txt_append_text(self.txtResult, "REMINDERS: \n")
-        self._txt_append_text(self.txtResult, " - layers inside a folder cannot be altered\n")
-        self._txt_append_text(self.txtResult, " - don't click on another tab in photoshop while the script is running\n")
-        self._txt_append_text(self.txtResult, " - to configuration settings view settings.json\n")
+        self._txt_append_text(self.txtResult, "REMINDERS:")
+        self._txt_append_text(self.txtResult, " - layers inside a folder cannot be altered")
+        self._txt_append_text(self.txtResult, " - you need to reselect csv to apply changes")
+        self._txt_append_text(self.txtResult, " - don't click on another tab in photoshop while the script is running")
+        self._txt_append_text(self.txtResult, " - to configuration settings view settings.json")
 
     def _txt_refresh_text(self, txt:tk.Text):
         txt['state'] = "normal"
@@ -163,5 +179,5 @@ class Window:
 
     def _txt_append_text(self, txt: tk.Text, content:str):
         txt['state'] = "normal"
-        txt.insert(tk.END, content)
+        txt.insert(tk.END, f"{content}\n")
         txt['state'] = "disabled"

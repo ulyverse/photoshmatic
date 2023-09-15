@@ -23,7 +23,11 @@ class PhotoshopFiller:
             path = str(self._psd_path.parent) + f"\{doc_num}"
 
             for col in self.df.columns:
-                self._fill_layers(col, self.df.loc[row, col])
+                cur_cell_text = self.df.loc[row, col]
+                if self.text_settings != "default":
+                    cur_cell_text = self.text_transform(cur_cell_text)
+                    print(cur_cell_text)
+                self._fill_layers(col, cur_cell_text)
 
             cur_row_size_name = self.df.loc[row, 'size']
             size_found = self._change_doc_size(cur_row_size_name)
@@ -40,6 +44,15 @@ class PhotoshopFiller:
 
         self._app.activeDocument.close(ps.SaveOptions.DoNotSaveChanges)
         return log
+    
+    def text_transform(self, text:str) -> str:
+        if self.text_settings == "uppercase":
+            return text.upper()
+        elif self.text_settings == "lowercase":
+            return text.lower()
+        elif self.text_settings == "capitalize":
+            return text.capitalize()
+
 
     def print_sizes(self):
         for size in self.sizes:
@@ -62,6 +75,8 @@ class PhotoshopFiller:
         for layer in self._app.activeDocument.layers:
             if layer.name == layerName:
                 layer.textItem.contents = content
+    def __init__(self) -> None:
+        self.text_settings = 0
 
     def init_photoshop(self, ps_path:str):
         self._app = ps.Application()
