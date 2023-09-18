@@ -4,8 +4,10 @@ from photoshop import api as ps
 
 #built-in modules
 import json
+import uuid
+from enum import Enum
 from pathlib import Path
-from tkinter import ttk
+
 
 #custom modules
 from sizes import Size
@@ -99,6 +101,18 @@ class PhotoshopFiller:
         
         
 
+class Helper:
+    def get_uniq_identifier():
+        return ':'.join(("%012X" % uuid.getnode())[i:i+2] for i in range(0, 12, 2))
 
+    def __init__(self) -> None:
+        pass
+
+
+class TextSettings(Enum):
+    DEFAULT = 1
+    UPPERCASE = 2
+    LOWERCASE = 3
+    CAPITALIZE = 4
 
 
