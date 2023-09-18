@@ -30,15 +30,14 @@ class PhotoshopFiller:
 
             for col in self.df.columns:
                 cur_cell_text = self.df.loc[row, col]
-                if self.text_settings != "default":
+                if self.text_settings != TextSettings.DEFAULT.value:
                     cur_cell_text = self.text_transform(cur_cell_text)
-                    print(cur_cell_text)
                 self._fill_layers(col, cur_cell_text)
 
             size_found = self._change_doc_size(cur_size)
 
             if size_found == False:
-                log += f"{cur_name} size incorrect/not found\n"
+                log += f"{col_num} - {cur_name} size incorrect/not found\n"
 
             self._app.activeDocument.saveAs(path, self._jpg_savepref)
             self._app.activeDocument.activeHistoryState = savedState
@@ -54,11 +53,11 @@ class PhotoshopFiller:
         return log
     
     def text_transform(self, text:str) -> str:
-        if self.text_settings == "uppercase":
+        if self.text_settings == TextSettings.UPPERCASE.value:
             return text.upper()
-        elif self.text_settings == "lowercase":
+        elif self.text_settings == TextSettings.LOWERCASE.value:
             return text.lower()
-        elif self.text_settings == "capitalize":
+        elif self.text_settings == TextSettings.CAPITALIZE.value:
             return text.capitalize()
         
     def _convert_to_cmyk(self, path):
@@ -75,12 +74,12 @@ class PhotoshopFiller:
                 size_found = True
 
         return size_found
-            
 
     def _fill_layers(self, layerName: str, content: str):
         for layer in self._app.activeDocument.layers:
             if layer.name == layerName:
                 layer.textItem.contents = content
+
     def __init__(self) -> None:
         self.text_settings = 0
 
@@ -113,6 +112,14 @@ class PhotoshopFiller:
         
 
 class Helper:
+
+    def get_textsettings():
+        txtset = list()
+        for text_setting in TextSettings:
+            txtset.append(text_setting.value)
+
+        return txtset
+
     def get_uniq_identifier():
         return ':'.join(("%012X" % uuid.getnode())[i:i+2] for i in range(0, 12, 2))
 
@@ -121,9 +128,9 @@ class Helper:
 
 
 class TextSettings(Enum):
-    DEFAULT = 1
-    UPPERCASE = 2
-    LOWERCASE = 3
-    CAPITALIZE = 4
+    DEFAULT = "default"
+    UPPERCASE = "uppercase"
+    LOWERCASE = "lowercase"
+    CAPITALIZE = "capitalize"
 
 

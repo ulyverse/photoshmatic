@@ -10,6 +10,7 @@ from pathlib import Path
 
 #custom module
 from utils import PhotoshopFiller
+from utils import Helper
 
 
 class Window:
@@ -94,7 +95,7 @@ class Window:
 
         self.cmbTextSettings = ttk.Combobox(self.grpTextSettings, font=self.font_style)
         self.cmbTextSettings.state(["readonly"])
-        self.cmbTextSettings['values'] = ['default','uppercase', 'lowercase', 'capitalize']
+        self.cmbTextSettings['values'] = Helper.get_textsettings()
         self.cmbTextSettings.current(0)
         self.cmbTextSettings.pack(side="left")
         
