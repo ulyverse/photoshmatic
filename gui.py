@@ -133,22 +133,18 @@ class Window:
     def _select_psd(self):
         psd_path = filedialog.askopenfilename(title="Select Photoshop Document", filetypes=[("psd files", "*.psd *.tif")])
         if psd_path != "":
-            self.lblPhotoshopPath['text'] = self._shorten_path(psd_path)
+            self.lblPhotoshopPath['text'] = Path(psd_path).name
             self.ps_filler.init_photoshop(psd_path)
 
     def _select_csv(self):
         csv_path = filedialog.askopenfilename(title="Select CSV File", filetypes=[("csv files", "*.csv")])
         if csv_path != "":
-            self.lblCsvPath['text'] = self._shorten_path(csv_path)
+            self.lblCsvPath['text'] = Path(csv_path).name
             self.ps_filler.init_dataframe(csv_path)
 
     def _select_sizes(self):
         json_path = f"{Path(__file__).parent}\sizes\{self.cmbSizes.get()}.json"
         self.ps_filler.init_sizes(json_path)
-
-    def _shorten_path(self, raw_path:str) -> str:
-        path = Path(raw_path)
-        return f"{raw_path[:2]}/.../{path.parent.name}/{path.name}"
 
     def _set_text_settings(self):
         self.ps_filler.text_settings = self.cmbTextSettings.get()
