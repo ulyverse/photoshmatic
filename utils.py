@@ -13,7 +13,7 @@ from pathlib import Path
 from sizes import Size
 
 class PhotoshopFiller:
-    def start(self, callback = None):
+    def start(self, callback = None, convertCMYK = False):
         log = ""
         num_rows = len(self.df.index)
         psd_name = self._app.activeDocument.name
@@ -21,8 +21,12 @@ class PhotoshopFiller:
         for row in range(num_rows):
             savedState = self._app.activeDocument.activeHistoryState
 
-            doc_num = row + 1
-            path = str(self._psd_path.parent) + f"\{doc_num}"
+            col_num = row + 1
+            cur_name = self.df.loc[row, 'name']
+            cur_size = self.df.loc[row, 'size']
+            cur_number = self.df.loc[row, 'number']
+
+            path = str(self._psd_path.parent) + f"\{col_num} - {cur_name}_{cur_size}_{cur_number}"
 
             for col in self.df.columns:
                 cur_cell_text = self.df.loc[row, col]
@@ -31,16 +35,18 @@ class PhotoshopFiller:
                     print(cur_cell_text)
                 self._fill_layers(col, cur_cell_text)
 
-            cur_row_size_name = self.df.loc[row, 'size']
-            size_found = self._change_doc_size(cur_row_size_name)
+            size_found = self._change_doc_size(cur_size)
 
             if size_found == False:
-                log += f"#{doc_num} size incorrect/not found\n"
+                log += f"{cur_name} size incorrect/not found\n"
 
             self._app.activeDocument.saveAs(path, self._jpg_savepref)
             self._app.activeDocument.activeHistoryState = savedState
 
-            progress = doc_num/num_rows*100
+            if convertCMYK:
+                self._convert_to_cmyk(path)
+
+            progress = col_num/num_rows*100
             if callback != None:
                 callback(progress)
 
@@ -54,14 +60,12 @@ class PhotoshopFiller:
             return text.lower()
         elif self.text_settings == "capitalize":
             return text.capitalize()
-
-
-    def print_sizes(self):
-        for size in self.sizes:
-            print(f"{size.width} {size.height} {size.name}")
-
-    def print_df(self):
-        print(self.df)
+        
+    def _convert_to_cmyk(self, path):
+        file_type = ".jpg"
+        self._app.open(path+file_type)
+        self._app.activeDocument.changeMode(ps.ChangeMode.ConvertToCMYK)
+        self._app.activeDocument.close(ps.SaveOptions.SaveChanges)
 
     def _change_doc_size(self, size_name) -> bool:
         size_found = False
@@ -98,6 +102,13 @@ class PhotoshopFiller:
 
     def init_dataframe(self, csv_path):
         self.df = pd.read_csv(csv_path, dtype={'number':str})
+
+    def print_sizes(self):
+        for size in self.sizes:
+            print(f"{size.width} {size.height} {size.name}")
+
+    def print_df(self):
+        print(self.df)
         
         
 
