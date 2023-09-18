@@ -139,9 +139,15 @@ class Window:
 
     def _select_csv(self):
         csv_path = filedialog.askopenfilename(title="Select CSV File", filetypes=[("csv files", "*.csv")])
-        if csv_path != "":
+        result = self.ps_filler.init_dataframe(csv_path)
+
+        if csv_path != "" and result == True:
             self.lblCsvPath['text'] = Path(csv_path).name
-            self.ps_filler.init_dataframe(csv_path)
+        else:
+            message = "csv must have "
+            message += ", ".join(i for i in result)
+            message += " column/s"
+            messagebox.showerror("Error", message)
 
     def _select_sizes(self):
         json_path = f"{Path(__file__).parent}\sizes\{self.cmbSizes.get()}.json"

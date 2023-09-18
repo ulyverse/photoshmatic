@@ -92,6 +92,16 @@ class PhotoshopFiller:
     def init_dataframe(self, file_path):
         self.df = pd.read_csv(file_path, dtype={'number':str})
 
+        required_columns = ['name', 'number', 'size']
+        for col in self.df.columns:
+            if col in required_columns:
+                required_columns.remove(col)
+        
+        if len(required_columns) != 0:
+            return required_columns
+        else:
+            return True
+
     def print_sizes(self):
         for size in self.sizes:
             print(f"{size.width} {size.height} {size.name}")
