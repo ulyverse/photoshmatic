@@ -16,6 +16,7 @@ class PhotoshopFiller:
     def start(self, callback = None, convertCMYK = False):
         log = ""
         num_rows = len(self.df.index)
+        self._app.open(str(self._psd_path.absolute()))
         psd_name = self._app.activeDocument.name
         self._app.activeDocument.duplicate(f"{psd_name} - placeholder")
         for row in range(num_rows):
