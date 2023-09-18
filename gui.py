@@ -13,7 +13,6 @@ from pathlib import Path
 from utils import PhotoshopFiller
 from utils import Helper
 
-
 class Window:
     def __init__(self) -> None:
         self.ps_filler = PhotoshopFiller()
@@ -61,7 +60,6 @@ class Window:
         self.root.title("Photoshop CSV Filler")
         self.root['pady'] = 30
         self.root['padx'] = 30
-
         self._conf_grid()
 
     def _conf_grid(self):
@@ -105,7 +103,7 @@ class Window:
         self.checkCMYK.pack(side="left")
         
         self.btnStart = tk.Button(self.root, text="START", command=self._start, font=self.font_style, width=15)
-        
+
         #4
         self.progressBar = ttk.Progressbar(self.root)
 
@@ -139,7 +137,7 @@ class Window:
     def _select_psd(self):
         psd_path = filedialog.askopenfilename(title="Select Photoshop Document", filetypes=[("psd files", "*.psd *.tif")])
         if psd_path != "":
-            self.lblPhotoshopPath['text'] = Path(psd_path).name
+            self.lblPhotoshopPath['text'] = psd_path
             self.ps_filler.init_photoshop(psd_path)
 
     def _select_csv(self):
@@ -147,14 +145,13 @@ class Window:
         result = self.ps_filler.init_dataframe(csv_path)
 
         if csv_path != "" and result == True:
-            self.lblCsvPath['text'] = Path(csv_path).name
+            self.lblCsvPath['text'] = csv_path
         else:
             message = "csv must have "
             message += ", ".join(i for i in result)
             message += " column/s"
             messagebox.showerror("Error", message)
             self.lblCsvPath['text'] = ""
-
 
     def _select_sizes(self):
         json_path = f"{Path(__file__).parent}\sizes\{self.cmbSizes.get()}.json"

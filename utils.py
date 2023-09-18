@@ -75,11 +75,11 @@ class PhotoshopFiller:
 
     def init_photoshop(self, file_path:str):
         self._psd_path = Path(file_path)
-        self._jpg_savepref = ps.JPEGSaveOptions(quality=12)
         
     def open_photoshop_file(self):
         self._app = ps.Application()
         self._app.preferences.rulerUnits = ps.Units.Inches
+        self._jpg_savepref = ps.JPEGSaveOptions(quality=12)
         self._app.open(str(self._psd_path.absolute()))
     
     def init_sizes(self, file_path: str):
