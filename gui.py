@@ -3,6 +3,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter import BooleanVar
 import time
 
 import os
@@ -37,7 +38,7 @@ class Window:
             self._txt_append_text(self.txtResult, "Running script...")
             start_time = time.time()
 
-            log = self.ps_filler.start()
+            log = self.ps_filler.start(convertCMYK=self.isCMYK.get())
 
             self._txt_append_text(self.txtResult, f"Execution time: {time.time()-start_time:0.2f} seconds\n")
             self.progressBar['value'] = 100
@@ -56,7 +57,7 @@ class Window:
         self.font_style = ('Arial', 12)
         self.root = tk.Tk()
         self.root.minsize(600,400)
-        self.root.geometry("700x400")
+        self.root.geometry("875x400")
         self.root.title("Photoshop CSV Filler")
         self.root['pady'] = 30
         self.root['padx'] = 30
@@ -90,17 +91,21 @@ class Window:
 
         self.grpTextSettings = tk.Frame(self.root)
 
-        self.lblTextSettings = tk.Label(self.grpTextSettings, text="Text Transform: ", font=self.font_style)
+        self.lblTextSettings = tk.Label(self.grpTextSettings, text="Text transform: ")
         self.lblTextSettings.pack(side="left")
 
-        self.cmbTextSettings = ttk.Combobox(self.grpTextSettings, font=self.font_style)
+        self.cmbTextSettings = ttk.Combobox(self.grpTextSettings, width=10)
         self.cmbTextSettings.state(["readonly"])
         self.cmbTextSettings['values'] = Helper.get_textsettings()
         self.cmbTextSettings.current(0)
-        self.cmbTextSettings.pack(side="left")
-        
+        self.cmbTextSettings.pack(side="left", padx=(0,30))
 
+        self.isCMYK = BooleanVar()
+        self.checkCMYK = ttk.Checkbutton(self.grpTextSettings, text="Convert image to cmyk", variable=self.isCMYK, onvalue=True, offvalue=False)
+        self.checkCMYK.pack(side="left")
+        
         self.btnStart = tk.Button(self.root, text="START", command=self._start, font=self.font_style, width=15)
+        
         #4
         self.progressBar = ttk.Progressbar(self.root)
 
@@ -122,7 +127,7 @@ class Window:
 
         #3
         self.cmbSizes.grid(row=2, column=0, sticky="WE", padx=(0,30))
-        self.grpTextSettings.grid(row=2, column=1, sticky="WE", padx=(0,30))
+        self.grpTextSettings.grid(row=2, column=1, sticky="WE")
         self.btnStart.grid(row=2, column=2, sticky="WE")
 
         #4
@@ -148,6 +153,8 @@ class Window:
             message += ", ".join(i for i in result)
             message += " column/s"
             messagebox.showerror("Error", message)
+            self.lblCsvPath['text'] = ""
+
 
     def _select_sizes(self):
         json_path = f"{Path(__file__).parent}\sizes\{self.cmbSizes.get()}.json"
@@ -169,9 +176,10 @@ class Window:
     def _populate_txtResult(self):
         self._txt_refresh_text(self.txtResult)
         self._txt_append_text(self.txtResult, "REMINDERS:")
-        self._txt_append_text(self.txtResult, " - layers inside a folder cannot be altered")
-        self._txt_append_text(self.txtResult, " - you need to reselect csv to apply changes")
-        self._txt_append_text(self.txtResult, " - don't click on another tab in photoshop while the script is running")
+        self._txt_append_text(self.txtResult, " - Don't click on another tab inside photoshop while the script is running(\"Pressing Start\")")
+        self._txt_append_text(self.txtResult, " - Layers that you want to be changed by the csv should NOT be inside a group folder")
+        self._txt_append_text(self.txtResult, " - If you have made changes to your csv, you need to reselect the file inorder to apply the changes")
+        self._txt_append_text(self.txtResult, " - Text transform does't always apply! e.g, when the layer has been set to \"All Caps\"")
 
     def _txt_refresh_text(self, txt:tk.Text):
         txt['state'] = "normal"
