@@ -8,7 +8,6 @@ import uuid
 from enum import Enum
 from pathlib import Path
 
-
 #custom modules
 from sizes import Size
 
@@ -16,7 +15,7 @@ class PhotoshopFiller:
     def start(self, callback = None, convertCMYK = False):
         log = ""
         num_rows = len(self.df.index)
-        self._app.open(str(self._psd_path.absolute()))
+        self.open_photoshop_file()
         psd_name = self._app.activeDocument.name
         self._app.activeDocument.duplicate(f"{psd_name} - placeholder")
         for row in range(num_rows):
@@ -75,11 +74,13 @@ class PhotoshopFiller:
         self.text_settings = 0
 
     def init_photoshop(self, file_path:str):
-        self._app = ps.Application()
         self._psd_path = Path(file_path)
         self._jpg_savepref = ps.JPEGSaveOptions(quality=12)
+        
+    def open_photoshop_file(self):
+        self._app = ps.Application()
         self._app.preferences.rulerUnits = ps.Units.Inches
-        self._app.open(file_path)
+        self._app.open(str(self._psd_path.absolute()))
     
     def init_sizes(self, file_path: str):
         self.sizes = []
@@ -110,10 +111,8 @@ class PhotoshopFiller:
     def print_df(self):
         print(self.df)
         
-        
 
 class Helper:
-
     def get_textsettings():
         txtset = list()
         for text_setting in TextSettings:
