@@ -29,9 +29,7 @@ class PhotoshopFiller:
             path = str(self._psd_path.parent) + f"\{col_num} - {cur_name}_{cur_size}_{cur_number}"
 
             for col in self.df.columns:
-                cur_cell_text = self.df.loc[row, col]
-                if self.text_settings != TextSettings.DEFAULT.value:
-                    cur_cell_text = self.text_transform(cur_cell_text)
+                cur_cell_text = Helper.text_transform(self.df.loc[row, col], self.text_settings)
                 self._fill_layers(col, cur_cell_text)
 
             size_found = self._change_doc_size(cur_size)
@@ -51,14 +49,6 @@ class PhotoshopFiller:
 
         self._app.activeDocument.close(ps.SaveOptions.DoNotSaveChanges)
         return log
-    
-    def text_transform(self, text:str) -> str:
-        if self.text_settings == TextSettings.UPPERCASE.value:
-            return text.upper()
-        elif self.text_settings == TextSettings.LOWERCASE.value:
-            return text.lower()
-        elif self.text_settings == TextSettings.CAPITALIZE.value:
-            return text.capitalize()
         
     def _convert_to_cmyk(self, path):
         file_type = ".jpg"
@@ -83,24 +73,24 @@ class PhotoshopFiller:
     def __init__(self) -> None:
         self.text_settings = 0
 
-    def init_photoshop(self, ps_path:str):
+    def init_photoshop(self, file_path:str):
         self._app = ps.Application()
-        self._psd_path = Path(ps_path)
+        self._psd_path = Path(file_path)
         self._jpg_savepref = ps.JPEGSaveOptions(quality=12)
         self._app.preferences.rulerUnits = ps.Units.Inches
-        self._app.open(ps_path)
+        self._app.open(file_path)
     
-    def init_sizes(self, json_path: str):
+    def init_sizes(self, file_path: str):
         self.sizes = []
 
-        with open(str(json_path)) as s:
+        with open(str(file_path)) as s:
             json_raw = json.load(s)
 
         for json_raw_sizes in json_raw['sizes']:
             self.sizes.append(Size(json_raw_sizes['name'], json_raw_sizes['width'], json_raw_sizes['height']))
 
-    def init_dataframe(self, csv_path):
-        self.df = pd.read_csv(csv_path, dtype={'number':str})
+    def init_dataframe(self, file_path):
+        self.df = pd.read_csv(file_path, dtype={'number':str})
 
     def print_sizes(self):
         for size in self.sizes:
@@ -122,6 +112,18 @@ class Helper:
 
     def get_uniq_identifier():
         return ':'.join(("%012X" % uuid.getnode())[i:i+2] for i in range(0, 12, 2))
+
+    def text_transform(text:str, text_settings:str) -> str:
+        if text_settings == TextSettings.DEFAULT.value:
+            return text
+        elif text_settings == TextSettings.UPPERCASE.value:
+            return text.upper()
+        elif text_settings == TextSettings.LOWERCASE.value:
+            return text.lower()
+        elif text_settings == TextSettings.CAPITALIZE.value:
+            return text.capitalize()
+        
+        return text
 
     def __init__(self) -> None:
         pass
