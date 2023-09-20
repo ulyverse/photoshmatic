@@ -15,7 +15,7 @@ class PhotoshopFiller:
     def start(self, callback = None, convertCMYK = False):
         log = ""
         num_rows = len(self.df.index)
-        self.open_photoshop_file()
+        self._open_photoshop_file()
         psd_name = self._app.activeDocument.name
         self._app.activeDocument.duplicate(f"{psd_name} - placeholder")
         for row in range(num_rows):
@@ -31,6 +31,10 @@ class PhotoshopFiller:
             for col in self.df.columns:
                 cur_cell_text = Helper.text_transform(self.df.loc[row, col], self.text_settings)
                 self._fill_layers(col, cur_cell_text)
+
+            short = self._get_shortsize(cur_size)
+            if short != None:
+                self._fill_layers("shortsize", short)
 
             size_found = self._change_doc_size(cur_size)
 
@@ -58,12 +62,23 @@ class PhotoshopFiller:
 
     def _change_doc_size(self, size_name) -> bool:
         size_found = False
-        for size in self.sizes:
-            if size.name == size_name:
-                self._app.activeDocument.resizeImage(size.width, size.height, self._app.activeDocument.resolution)
-                size_found = True
+        size = self._get_size(size_name)
+        if(size != None):
+            self._app.activeDocument.resizeImage(size.width, size.height, self._app.activeDocument.resolution)
+            size_found = True
 
         return size_found
+    
+    def _get_shortsize(self, size_name):
+        size = self._get_size(size_name)
+        if(size != None):
+            return size.short_size
+    
+    def _get_size(self, size_name):
+        for size in self.sizes:
+            if size.name == size_name:
+                return size
+        return None
 
     def _fill_layers(self, layerName: str, content: str):
         for layer in self._app.activeDocument.layers:
@@ -76,7 +91,7 @@ class PhotoshopFiller:
     def init_photoshop(self, file_path:str):
         self._psd_path = Path(file_path)
         
-    def open_photoshop_file(self):
+    def _open_photoshop_file(self):
         self._app = ps.Application()
         self._app.preferences.rulerUnits = ps.Units.Inches
         self._jpg_savepref = ps.JPEGSaveOptions(quality=12)
@@ -89,7 +104,7 @@ class PhotoshopFiller:
             json_raw = json.load(s)
 
         for json_raw_sizes in json_raw['sizes']:
-            self.sizes.append(Size(json_raw_sizes['name'], json_raw_sizes['width'], json_raw_sizes['height']))
+            self.sizes.append(Size(json_raw_sizes['name'], json_raw_sizes['width'], json_raw_sizes['height'], json_raw_sizes['shortsize']))
 
     def init_dataframe(self, file_path):
         self.df = pd.read_csv(file_path, dtype={'number':str})

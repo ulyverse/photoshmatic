@@ -1,15 +1,15 @@
 {
     "sizes":[
-        {"name":"2xsmall", "width": 37, "height": 27},
-        {"name":"xsmall", "width": 39, "height": 29},
-        {"name":"small", "width": 41, "height": 30},
-        {"name":"medium", "width": 43, "height": 31},
-        {"name":"large", "width": 45, "height": 32},
-        {"name":"xlarge", "width": 47, "height": 33},
-        {"name":"2xlarge", "width": 49, "height": 34},
-        {"name":"3xlarge", "width": 51, "height": 35},
-        {"name":"4xlarge", "width": 53, "height": 36},
-        {"name":"5xlarge", "width": 55, "height": 38}
+        {"name": "2xsmall", "width": 37, "height": 27, "shortsize": "2XS"},
+        {"name": "xsmall", "width": 39, "height": 29, "shortsize": "XS"},
+        {"name": "small", "width": 41, "height": 30, "shortsize": "S"},
+        {"name": "medium", "width": 43, "height": 31, "shortsize": "M"},
+        {"name": "large", "width": 45, "height": 32, "shortsize": "L"},
+        {"name": "xlarge", "width": 47, "height": 33, "shortsize": "XL"},
+        {"name": "2xlarge", "width": 49, "height": 34, "shortsize": "2XL"},
+        {"name": "3xlarge", "width": 51, "height": 35, "shortsize": "3XL"},
+        {"name": "4xlarge", "width": 53, "height": 36, "shortsize": "4XL"},
+        {"name": "5xlarge", "width": 55, "height": 38, "shortsize": "5XL"}
     ]
     
 }
