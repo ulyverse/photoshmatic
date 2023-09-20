@@ -173,10 +173,10 @@ class Window:
     def _populate_txtResult(self):
         self._txt_refresh_text(self.txtResult)
         self._txt_append_text(self.txtResult, "REMINDERS:")
-        self._txt_append_text(self.txtResult, " - Don't click on another tab inside photoshop while the script is running(\"Pressing Start\")")
+        self._txt_append_text(self.txtResult, " - Don't click on another tab inside photoshop while the script is running")
         self._txt_append_text(self.txtResult, " - Layers that you want to be changed by the csv should NOT be inside a group folder")
         self._txt_append_text(self.txtResult, " - If you have made changes to your csv, you need to reselect the file inorder to apply the changes")
-        self._txt_append_text(self.txtResult, " - Text transform does't always apply! e.g, when the layer has been set to \"All Caps\"")
+        self._txt_append_text(self.txtResult, " - Text transform does't always apply! e.g. when the layer has been set to \"All Caps\"")
 
     def _txt_refresh_text(self, txt:tk.Text):
         txt['state'] = "normal"
