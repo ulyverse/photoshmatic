@@ -5,6 +5,7 @@ from photoshop import api as ps
 #built-in modules
 import json
 import uuid
+import hashlib
 from enum import Enum
 from pathlib import Path
 
@@ -136,6 +137,9 @@ class Helper:
         return txtset
 
     def get_uniq_identifier():
+        return hashlib.md5(Helper.get_mad().encode("utf-8")).hexdigest()
+    
+    def get_mad():
         return ':'.join(("%012X" % uuid.getnode())[i:i+2] for i in range(0, 12, 2))
 
     def text_transform(text:str, text_settings:str) -> str:
