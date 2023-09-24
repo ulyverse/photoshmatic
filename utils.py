@@ -3,9 +3,9 @@ import pandas as pd
 from photoshop import api as ps
 
 #built-in modules
+import hashlib
 import json
 import uuid
-import hashlib
 from enum import Enum
 from pathlib import Path
 
@@ -23,24 +23,33 @@ class PhotoshopFiller:
             savedState = self._app.activeDocument.activeHistoryState
 
             col_num = row + 1
-            cur_name = self.df.loc[row, 'name']
-            cur_size = self.df.loc[row, 'size']
-            cur_number = self.df.loc[row, 'number']
 
-            path = str(self._psd_path.parent) + f"\{col_num} - {cur_name}_{cur_size}_{cur_number}"
+            file_info = []
+            for ecol in self._get_existing_essentialcol():
+                ecol_value = self.df.loc[row,ecol]
+                if Helper.is_not_na(ecol_value):
+                    file_info.append(ecol_value)
+
+            file_format = '_'.join(file_info)
+
+            path = str(self._psd_path.parent) + f"\{col_num} - {file_format}"
 
             for col in self.df.columns:
-                cur_cell_text = Helper.text_transform(self.df.loc[row, col], self.text_settings)
+                cur_cell_value = self.df.loc[row, col]
+                cur_cell_text = Helper.text_transform(cur_cell_value if Helper.is_not_na(cur_cell_value) else "", self.text_settings)
                 self._fill_layers(col, cur_cell_text)
 
-            short = self._get_shortsize(cur_size)
-            if short != None:
-                self._fill_layers("shortsize", short)
+            if 'size' in self._get_existing_essentialcol() and Helper.is_not_na(self.df.loc[row,'size']):
+                cur_size = self.df.loc[row,'size']
 
-            size_found = self._change_doc_size(cur_size)
+                short = self._get_shortsize(cur_size)
+                if short != None:
+                    self._fill_layers("shortsize", short)
 
-            if size_found == False:
-                log += f"{col_num} - {cur_name} size incorrect/not found\n"
+                size_found = self._change_doc_size(cur_size)
+
+                if size_found == False:
+                    log += f"picture #{col_num} size incorrect/not found\n"
 
             self._app.activeDocument.saveAs(path, self._jpg_savepref)
             self._app.activeDocument.activeHistoryState = savedState
@@ -54,7 +63,7 @@ class PhotoshopFiller:
 
         self._app.activeDocument.close(ps.SaveOptions.DoNotSaveChanges)
         return log
-        
+
     def _convert_to_cmyk(self, path):
         file_type = ".jpg"
         self._app.open(path+file_type)
@@ -110,15 +119,13 @@ class PhotoshopFiller:
     def init_dataframe(self, file_path):
         self.df = pd.read_csv(file_path, dtype={'number':str})
 
-        required_columns = ['name', 'number', 'size']
-        for col in self.df.columns:
-            if col in required_columns:
-                required_columns.remove(col)
-        
-        if len(required_columns) != 0:
-            return required_columns
-        else:
-            return True
+    def _get_existing_essentialcol(self):
+        required_col = ['name','size','number']
+        existing_col = []
+        for rcol in required_col:
+            if rcol in self.df.columns:
+                existing_col.append(rcol)
+        return existing_col
 
     def print_sizes(self):
         for size in self.sizes:
@@ -129,6 +136,9 @@ class PhotoshopFiller:
         
 
 class Helper:
+    def is_not_na(scalar):
+        return pd.isna(scalar) == False
+
     def get_textsettings():
         txtset = list()
         for text_setting in TextSettings:
