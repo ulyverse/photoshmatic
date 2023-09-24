@@ -32,7 +32,9 @@ class PhotoshopFiller:
 
             file_format = '_'.join(file_info)
 
-            path = str(self._psd_path.parent) + f"\{col_num} - {file_format}"
+            path = str(self._psd_path.parent) + f"\{col_num}"
+            if file_format != "":
+                path += f"- {file_format}"
 
             for col in self.df.columns:
                 cur_cell_value = self.df.loc[row, col]
@@ -92,8 +94,37 @@ class PhotoshopFiller:
 
     def _fill_layers(self, layerName: str, content: str):
         for layer in self._app.activeDocument.layers:
-            if layer.name == layerName:
+            layer_name = layer.name.split()
+            if layer_name[0] == layerName:
+                self._app.activeDocument.activeLayer = layer
                 layer.textItem.contents = content
+
+                if len(layer_name) > 1:
+                    parameter = layer_name[1]
+                    max = Helper.try_parse(parameter) if parameter[0].isdigit() else Helper.try_parse(parameter[2:])
+                    if max == None:
+                        return f"Parameter invalid in {layer.name}"
+                    else:
+                        self.exceed_length_param(max, parameter[:1])
+
+                    # activate_layer = self._app.activeDocument.activeLayer
+                    # width = activate_layer.bounds[2] - activate_layer.bounds[0]
+                    # if width > max:
+                    #     r = max / width * 100
+                    #     activate_layer.resize(r, r, ps.AnchorPosition.MiddleCenter)
+
+    def exceed_length_param(self, max, param:str):
+        activate_layer = self._app.activeDocument.activeLayer
+        first = 2
+        second = 0
+        add = 0
+        is_height = True if param.lower() == Parameter.HEIGHT.value else False
+        if is_height:
+            add = 1
+        length = activate_layer.bounds[first + add] - activate_layer.bounds[second + add]
+        if length > max:
+            r = max / length * 100
+            activate_layer.resize(r, r, ps.AnchorPosition.MiddleCenter if is_height == False else ps.AnchorPosition.TopCenter)
 
     def __init__(self) -> None:
         self.text_settings = 0
@@ -136,6 +167,9 @@ class PhotoshopFiller:
         
 
 class Helper:
+    def try_parse(digit:str):
+        return float(digit) if digit.isdigit() else None
+
     def is_not_na(scalar):
         return pd.isna(scalar) == False
 
@@ -173,5 +207,9 @@ class TextSettings(Enum):
     UPPERCASE = "uppercase"
     LOWERCASE = "lowercase"
     CAPITALIZE = "capitalize"
+
+class Parameter(Enum):
+    WIDTH = "w"
+    HEIGHT = "h"
 
 
