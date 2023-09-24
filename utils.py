@@ -39,17 +39,17 @@ class PhotoshopFiller:
                 cur_cell_text = Helper.text_transform(cur_cell_value if Helper.is_not_na(cur_cell_value) else "", self.text_settings)
                 self._fill_layers(col, cur_cell_text)
 
-            if 'size' in self._get_existing_essentialcol() and Helper.is_not_na(self.df.loc[row,'size']):
-                cur_size = self.df.loc[row,'size']
+            cur_size = self.df.loc[row,'size']
 
+            if 'size' in self._get_existing_essentialcol() and Helper.is_not_na(cur_size):
                 short = self._get_shortsize(cur_size)
                 if short != None:
                     self._fill_layers("shortsize", short)
 
-                size_found = self._change_doc_size(cur_size)
+            size_found = self._change_doc_size(cur_size)
 
-                if size_found == False:
-                    log += f"picture #{col_num} size incorrect/not found\n"
+            if size_found == False:
+                log += f"picture #{col_num} size not found\n"
 
             self._app.activeDocument.saveAs(path, self._jpg_savepref)
             self._app.activeDocument.activeHistoryState = savedState
