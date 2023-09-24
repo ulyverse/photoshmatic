@@ -18,6 +18,8 @@ class PhotoshopFiller:
         num_rows = len(self.df.index)
         self._open_photoshop_file()
         psd_name = self._app.activeDocument.name
+        error = self._check_param_error()
+        if error != None: log += f"Parameter invalid in these layers: {error}\n"
         self._app.activeDocument.duplicate(f"{psd_name} - placeholder")
         for row in range(num_rows):
             savedState = self._app.activeDocument.activeHistoryState
@@ -91,6 +93,20 @@ class PhotoshopFiller:
             if size.name == size_name:
                 return size
         return None
+    
+    def _check_param_error(self):
+        error = set()
+        for layer in self._app.activeDocument.layers:
+            layer_name = layer.name.split()
+            if len(layer_name) > 1:
+                is_param_error = True if self._get_param_digit(layer_name[1]) == None else False
+                if is_param_error and layer.name not in error:
+                    error.add(layer.name)
+        if len(error) > 0:
+            return error
+                    
+    def _get_param_digit(self, val):
+        return Helper.try_parse(val) if val[0].isdigit() else Helper.try_parse(val[2:])
 
     def _fill_layers(self, layerName: str, content: str):
         for layer in self._app.activeDocument.layers:
@@ -101,18 +117,10 @@ class PhotoshopFiller:
 
                 if len(layer_name) > 1:
                     parameter = layer_name[1]
-                    max = Helper.try_parse(parameter) if parameter[0].isdigit() else Helper.try_parse(parameter[2:])
-                    if max == None:
-                        return f"Parameter invalid in {layer.name}"
-                    else:
+                    max = self._get_param_digit(parameter)
+                    if max != None:
                         self.exceed_length_param(max, parameter[:1])
-
-                    # activate_layer = self._app.activeDocument.activeLayer
-                    # width = activate_layer.bounds[2] - activate_layer.bounds[0]
-                    # if width > max:
-                    #     r = max / width * 100
-                    #     activate_layer.resize(r, r, ps.AnchorPosition.MiddleCenter)
-
+                        
     def exceed_length_param(self, max, param:str):
         activate_layer = self._app.activeDocument.activeLayer
         first = 2
