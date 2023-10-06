@@ -3,7 +3,7 @@ from gui import Window
 
 
 def main():
-    if setup.setup():
+    if setup.setup() or setup.validate_registered_device():
         Window().run()
         return
     

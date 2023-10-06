@@ -8,32 +8,37 @@ def is_setup_done():
     return os.path.exists("firstrun.json")
 
 def setup():
+    return True if get_id() == Helper.get_uniq_identifier() else False
+
+def get_id():
     if is_setup_done():
-        with open("firstrun.json", "r") as f: 
-            id = Helper.get_uniq_identifier() 
+        with open("firstrun.json", "r") as f:
             data = json.load(f)
-            if data['id'] == id:
-                return True
-    
-    return False
+            return data['id']
+    return None
+
+def set_id():
+    with open("firstrun.json", "w") as f:
+        json.dump({'id':Helper.get_uniq_identifier()}, f)
 
 def enter_license_code():
     key = input("Enter your license key:")
     if validate_license_key(key):
-        with open("firstrun.json", "w") as f:
-            data = {}
-            data['id'] = Helper.get_uniq_identifier()
-            data['key'] = key
-            json.dump(data, f)
-            return True
+        set_id()
+        return True
     return False
 
 #ASSUME THIS IS FROM API CALL
 def validate_license_key(key):
-    response = requests.post("https://lifecalendr.com/api/key", data={"lkey":key})
+    response = requests.post("https://lifecalendr.com/api/register", data={"licensekey":key, "id": Helper.get_uniq_identifier()})
     
-    if response.status_code == 200 and response.json()['message'] == True:
+    return True if response.status_code == 200 and response.json()['status'] == True else False
+
+def validate_registered_device():
+    response = requests.post("https://lifecalendr.com/api/registered", data={"id": Helper.get_uniq_identifier()})
+
+    if response.status_code == 200 and response.json()['status']:
+        set_id()
         return True
-    else:
-        return False
-        
+    
+    return False
