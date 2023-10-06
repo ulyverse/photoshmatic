@@ -1,17 +1,18 @@
 #built-in modules
+import time
 import tkinter as tk
 import tkinter.ttk as ttk
+from tkinter import BooleanVar
 from tkinter import filedialog
 from tkinter import messagebox
-from tkinter import BooleanVar
-import time
+
 
 import os
 from pathlib import Path
 
 #custom module
-from utils import PhotoshopFiller
 from utils import Helper
+from utils import PhotoshopFiller
 
 class Window:
     def __init__(self) -> None:
