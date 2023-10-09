@@ -135,7 +135,10 @@ class PhotoshopFiller:
         length = activate_layer.bounds[first + add] - activate_layer.bounds[second + add]
         if length > max:
             r = max / length * 100
-            activate_layer.resize(r, r, ps.AnchorPosition.MiddleCenter if is_height == False else ps.AnchorPosition.TopCenter)
+            if is_height:
+                activate_layer.resize(100, r, ps.AnchorPosition.MiddleCenter if is_height == False else ps.AnchorPosition.TopCenter)
+            else:
+                activate_layer.resize(r, 100, ps.AnchorPosition.MiddleCenter if is_height == False else ps.AnchorPosition.TopCenter)
 
     def __init__(self) -> None:
         self.text_settings = 0
