@@ -179,7 +179,11 @@ class PhotoshopFiller:
 
 class Helper:
     def try_parse(digit:str):
-        return float(digit) if digit.isdigit() else None
+        try:
+            num = float(digit)
+            return num
+        except:
+            return None
 
     def is_not_na(scalar):
         return pd.isna(scalar) == False
