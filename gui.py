@@ -149,7 +149,7 @@ class Window:
             self.ps_filler.init_dataframe(csv_path)
 
     def _select_sizes(self):
-        json_path = f"{Path(__file__).parent}\sizes\{self.cmbSizes.get()}.json"
+        json_path = fr"sizes/{self.cmbSizes.get()}.json"
         self.ps_filler.init_sizes(json_path)
 
     def _set_text_settings(self):
@@ -160,7 +160,7 @@ class Window:
 
     def _populate_cmbSizes(self):
         sizes = ['Select Size']
-        for size in os.listdir(str(Path(__file__).parent) + "/sizes"):
+        for size in os.listdir("sizes/"):
             sizes.append(size[:-5])
         self.cmbSizes['values'] = sizes
         self.cmbSizes.current(0)
