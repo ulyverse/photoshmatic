@@ -22,60 +22,63 @@ class PhotoshopFiller:
    
     def start(self, callback = None, convertCMYK = False):
         log = ""
-        num_rows = len(self.df.index)
-        self._open_photoshop_file()
-        psd_name = self._app.activeDocument.name
-        error = self._check_param_error()
-        if error != None: log += f"Parameter invalid in these layers: {error}\n"
-        self._app.activeDocument.duplicate(f"{psd_name} - placeholder")
-        for row in range(num_rows):
-            savedState = self._app.activeDocument.activeHistoryState
+        try:
+            num_rows = len(self.df.index)
+            self._open_photoshop_file()
+            psd_name = self._app.activeDocument.name
+            error = self._check_param_error()
+            if error != None: log += f"Parameter invalid in these layers: {error}\n"
+            self._app.activeDocument.duplicate(f"{psd_name} - placeholder")
+            for row in range(num_rows):
+                savedState = self._app.activeDocument.activeHistoryState
 
-            col_num = row + 1
+                col_num = row + 1
 
-            #format file name
-            file_info = []
-            for ecol in self._get_existing_essentialcol():
-                ecol_value = self.df.loc[row,ecol]
-                if Helper.is_not_na(ecol_value):
-                    file_info.append(ecol_value)
+                #format file name
+                file_info = []
+                for ecol in self._get_existing_essentialcol():
+                    ecol_value = self.df.loc[row,ecol]
+                    if Helper.is_not_na(ecol_value):
+                        file_info.append(ecol_value)
 
-            file_format = '_'.join(file_info)
+                file_format = '_'.join(file_info)
 
-            path = str(self._psd_path.parent) + f"\{col_num}"
-            if file_format != "":
-                path += f"- {file_format}"
+                path = str(self._psd_path.parent) + fr"\{col_num}"
+                if file_format != "":
+                    path += f"- {file_format}"
 
-            #fill layers
-            for col in self.df.columns:
-                cur_cell_value = self.df.loc[row, col]
-                cur_cell_text = Helper.text_transform(cur_cell_value if Helper.is_not_na(cur_cell_value) else "", self.text_settings)
-                self._fill_layers(col, cur_cell_text)
+                #fill layers
+                for col in self.df.columns:
+                    cur_cell_value = self.df.loc[row, col]
+                    cur_cell_text = Helper.text_transform(cur_cell_value if Helper.is_not_na(cur_cell_value) else "", self.text_settings)
+                    self._fill_layers(col, cur_cell_text)
 
-            #change sizes
-            if 'size' in self._get_existing_essentialcol():
-                cur_size = self.df.loc[row,'size']
-                if Helper.is_not_na(cur_size):
-                    short = self._get_shortsize(cur_size)
-                    if short != None:
-                        self._fill_layers("shortsize", short)
+                #change sizes
+                if 'size' in self._get_existing_essentialcol():
+                    cur_size = self.df.loc[row,'size']
+                    if Helper.is_not_na(cur_size):
+                        short = self._get_shortsize(cur_size)
+                        if short != None:
+                            self._fill_layers("shortsize", short)
 
-                size_found = self._change_doc_size(cur_size)
+                    size_found = self._change_doc_size(cur_size)
 
-                if size_found == False:
-                    log += f"picture #{col_num} size not found\n"
+                    if size_found == False:
+                        log += f"picture #{col_num} size not found\n"
 
-            self._app.activeDocument.saveAs(path, self._jpg_savepref)
-            self._app.activeDocument.activeHistoryState = savedState
+                self._app.activeDocument.saveAs(path, self._jpg_savepref)
+                self._app.activeDocument.activeHistoryState = savedState
 
-            if convertCMYK:
-                self._convert_to_cmyk(path)
+                if convertCMYK:
+                    self._convert_to_cmyk(path)
 
-            progress = col_num/num_rows*100
-            if callback != None:
-                callback(progress)
+                progress = col_num/num_rows*100
+                if callback != None:
+                    callback(progress)
 
-        self._app.activeDocument.close(ps.SaveOptions.DoNotSaveChanges)
+            self._app.activeDocument.close(ps.SaveOptions.DoNotSaveChanges)
+        except Exception as e:
+            log += repr(e)
         return log
 
     def _convert_to_cmyk(self, path):
