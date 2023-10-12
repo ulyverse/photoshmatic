@@ -32,7 +32,7 @@ def enter_license_code():
 def validate_license_key(key):
     response = requests.post("https://lifecalendr.com/api/register", data={"licensekey":key, "id": Helper.get_uniq_identifier()})
     
-    return True if response.status_code == 200 and response.json()['status'] == True else False
+    return response.status_code == 200 and response.json()['status']
 
 def validate_registered_device():
     response = requests.post("https://lifecalendr.com/api/registered", data={"id": Helper.get_uniq_identifier()})
@@ -42,3 +42,8 @@ def validate_registered_device():
         return True
     
     return False
+
+def validate_version():
+    response = requests.post("https://lifecalendr.com/api/version", data={"version":"v1.0"})
+
+    return response.status_code == 200 and response.json()['status']
