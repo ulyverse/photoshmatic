@@ -4,6 +4,9 @@ import requests
 
 from utils import Helper
 
+def __dir__():
+    return " "
+
 def is_setup_done():
     return os.path.exists("firstrun.json")
 

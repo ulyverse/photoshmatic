@@ -12,7 +12,14 @@ from pathlib import Path
 #custom modules
 from sizes import Size
 
+
+def __dir__():
+    return " "
+
 class PhotoshopFiller:
+    def __dir__(self):
+        return " "
+   
     def start(self, callback = None, convertCMYK = False):
         log = ""
         num_rows = len(self.df.index)
@@ -181,6 +188,9 @@ class PhotoshopFiller:
         
 
 class Helper:
+    def get_dir():
+        return " "
+
     def try_parse(digit:str):
         try:
             num = float(digit)
@@ -215,10 +225,6 @@ class Helper:
             return text.capitalize()
         
         return text
-
-    def __init__(self) -> None:
-        pass
-
 
 class TextSettings(Enum):
     DEFAULT = "default"

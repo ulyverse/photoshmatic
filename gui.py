@@ -6,15 +6,19 @@ from tkinter import BooleanVar
 from tkinter import filedialog
 from tkinter import messagebox
 
-
 import os
-from pathlib import Path
 
 #custom module
 from utils import Helper
 from utils import PhotoshopFiller
 
+def __dir__():
+    return " "
+
 class Window:
+    def __dir__():
+        return " "
+    
     def __init__(self) -> None:
         self.ps_filler = PhotoshopFiller()
 
