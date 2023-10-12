@@ -11,7 +11,7 @@ def is_setup_done():
     return os.path.exists("firstrun.json")
 
 def setup():
-    return True if get_id() == Helper.get_uniq_identifier() else False
+    return get_id() == Helper.get_uniq_identifier()
 
 def get_id():
     if is_setup_done():
@@ -24,8 +24,7 @@ def set_id():
     with open("firstrun.json", "w") as f:
         json.dump({'id':Helper.get_uniq_identifier()}, f)
 
-def enter_license_code():
-    key = input("Enter your license key:")
+def enter_license_code(key):
     if validate_license_key(key):
         set_id()
         return True

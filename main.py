@@ -1,5 +1,6 @@
 import setup
 from gui import Window
+from requests import ConnectionError
 
 def __dir__():
     return " "
@@ -15,15 +16,16 @@ def main():
             return
     
         while True:
-            if setup.enter_license_code():
+            key = input("Enter your license key:")
+            if setup.enter_license_code(key):
                 Window().run()
                 break
             else:
                 print("Incorrect Key")
-    except Exception as e:
+    except ConnectionError as e:
         print("Cannot access the server, please check your internet connection.")
-        print(e)
-        return
+    except Exception as e:
+        print(repr(e))
 
 if __name__ == "__main__":
     main()
