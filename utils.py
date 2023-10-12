@@ -174,7 +174,7 @@ class PhotoshopFiller:
 
     def print_sizes(self):
         for size in self.sizes:
-            print(f"{size.width} {size.height} {size.name}")
+            print(f"{size.width} {size.height} {size.short_size} {size.name}")
 
     def print_df(self):
         print(self.df)
