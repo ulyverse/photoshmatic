@@ -1,6 +1,8 @@
 # Photomatic
-firstrun.json
+etc/
+photoshoppractice.py
 practice.py
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

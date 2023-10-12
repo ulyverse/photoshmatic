@@ -151,16 +151,28 @@ class PhotoshopFiller:
                 activate_layer.resize(r, 100, ps.AnchorPosition.MiddleCenter if is_height == False else ps.AnchorPosition.TopCenter)
 
     def __init__(self) -> None:
+        self.config_settings = Helper.get_settings()
         self.text_settings = 0
 
     def init_photoshop(self, file_path:str):
         self._psd_path = Path(file_path)
         
     def _open_photoshop_file(self):
-        self._app = ps.Application()
+        self._app = ps.Application(version=self.get_ps_version())
         self._app.preferences.rulerUnits = ps.Units.Inches
-        self._jpg_savepref = ps.JPEGSaveOptions(quality=12)
+        self._jpg_savepref = ps.JPEGSaveOptions(quality=self.get_jpg_quality())
         self._app.open(str(self._psd_path.absolute()))
+
+    def has_config_settings(self):
+        return self.config_settings != None
+
+    def get_jpg_quality(self):
+        return self.config_settings["jpg_quality"] if self.has_config_settings() else 12
+    
+    def get_ps_version(self):
+        ps_ver = self.config_settings["ps_version"]
+        return ps_ver if self.has_config_settings() and ps_ver != "" else None
+        
     
     def init_sizes(self, file_path: str):
         self.sizes = []
@@ -193,6 +205,13 @@ class PhotoshopFiller:
 class Helper:
     def get_dir():
         return " "
+
+    def get_settings():
+        try:
+            with open("etc/settings.json", "r") as f:
+                return json.load(f)
+        except:
+            return None
 
     def try_parse(digit:str):
         try:

@@ -7,22 +7,22 @@ from utils import Helper
 def __dir__():
     return " "
 
-def is_setup_done():
-    return os.path.exists("firstrun.json")
+def check_first_run_exist():
+    if not os.path.exists("etc/f.txt"):
+        with open("etc/f.txt", "w") as f:
+            f.write("Q2O12MAZV343EXLU2FNSDF74LKS76LJF")
 
 def setup():
     return get_id() == Helper.get_uniq_identifier()
 
 def get_id():
-    if is_setup_done():
-        with open("firstrun.json", "r") as f:
-            data = json.load(f)
-            return data['id']
-    return None
+    check_first_run_exist()
+    with open("etc/f.txt", "r") as f:
+        return f.read()
 
 def set_id():
-    with open("firstrun.json", "w") as f:
-        json.dump({'id':Helper.get_uniq_identifier()}, f)
+    with open("etc/f.txt", "w") as f:
+        f.write(Helper.get_uniq_identifier())
 
 def enter_license_code(key):
     if validate_license_key(key):
