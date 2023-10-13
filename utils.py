@@ -26,6 +26,8 @@ class PhotoshopFiller:
             num_rows = len(self.df.index)
             self._open_photoshop_file()
             psd_name = self._app.activeDocument.name
+            folder_path = fr"{str(self._psd_path.parent)}\{psd_name[:-4]} - {self.size_file_name}"
+            Path(folder_path).mkdir(exist_ok=True)
             error = self._check_param_error()
             if error != None: log += f"Parameter invalid in these layers: {error}\n"
             self._app.activeDocument.duplicate(f"{psd_name} - placeholder")
@@ -43,7 +45,8 @@ class PhotoshopFiller:
 
                 file_format = '_'.join(file_info)
 
-                path = str(self._psd_path.parent) + fr"\{col_num}"
+                #create path
+                path = fr"{folder_path}\{col_num}"
                 if file_format != "":
                     path += f"- {file_format}"
 
@@ -175,6 +178,7 @@ class PhotoshopFiller:
         
     
     def init_sizes(self, file_path: str):
+        self.size_file_name = file_path[6:-5]
         self.sizes = []
 
         with open(str(file_path)) as s:
