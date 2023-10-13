@@ -235,7 +235,7 @@ class Helper:
         return txtset
 
     def get_uniq_identifier():
-        return hashlib.md5(Helper.get_mad().encode("utf-8")).hexdigest()
+        return hashlib.md5((Helper.get_mad()+"hehexd").encode("utf-8")).hexdigest()
     
     def get_mad():
         return ':'.join(("%012X" % uuid.getnode())[i:i+2] for i in range(0, 12, 2))
@@ -252,11 +252,13 @@ class Helper:
         
         return text
 
+
 class TextSettings(Enum):
     DEFAULT = "default"
     UPPERCASE = "uppercase"
     LOWERCASE = "lowercase"
     CAPITALIZE = "capitalize"
+
 
 class Parameter(Enum):
     WIDTH = "w"
