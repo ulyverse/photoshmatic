@@ -22,6 +22,8 @@ class PhotoshopFiller:
    
     def start(self, callback = None, convertCMYK = False):
         log = ""
+        debug_cur_row_num = -1
+        debug_cur_col_num = -1
         try:
             num_rows = len(self.df.index)
             self._open_photoshop_file()
@@ -32,6 +34,7 @@ class PhotoshopFiller:
             if error != None: log += f"Parameter invalid in these layers: {error}\n"
             self._app.activeDocument.duplicate(f"{psd_name} - placeholder")
             for row in range(num_rows):
+                debug_cur_row_num = row
                 savedState = self._app.activeDocument.activeHistoryState
 
                 col_num = row + 1
@@ -52,6 +55,7 @@ class PhotoshopFiller:
 
                 #fill layers
                 for col in self.df.columns:
+                    debug_cur_col_num = col
                     cur_cell_value = self.df.loc[row, col]
                     cur_cell_text = Helper.text_transform(cur_cell_value if Helper.is_not_na(cur_cell_value) else "", self.text_settings)
                     self._fill_layers(col, cur_cell_text)
@@ -82,6 +86,8 @@ class PhotoshopFiller:
             self._app.activeDocument.close(ps.SaveOptions.DoNotSaveChanges)
         except Exception as e:
             log += repr(e)
+            if debug_cur_row_num != -1 and debug_cur_col_num != -1:
+                log += f"\nstopped at column: [{debug_cur_col_num}] row: [{debug_cur_row_num}], cell value: [{self.df.loc[debug_cur_row_num, debug_cur_col_num]}]"
         return log
 
     def _convert_to_cmyk(self, path):
@@ -135,9 +141,9 @@ class PhotoshopFiller:
                     parameter = layer_name[1]
                     max = self._get_param_digit(parameter)
                     if max != None:
-                        self.exceed_length_param(max, parameter[:1])
+                        self._exceed_length_param(max, parameter[:1])
                         
-    def exceed_length_param(self, max, param:str):
+    def _exceed_length_param(self, max, param:str):
         activate_layer = self._app.activeDocument.activeLayer
         first = 2
         second = 0
@@ -154,28 +160,31 @@ class PhotoshopFiller:
                 activate_layer.resize(r, 100, ps.AnchorPosition.MiddleCenter if is_height == False else ps.AnchorPosition.TopCenter)
 
     def __init__(self) -> None:
-        self.config_settings = Helper.get_settings()
+        self._config_settings = Helper.get_settings()
         self.text_settings = 0
 
     def init_photoshop(self, file_path:str):
         self._psd_path = Path(file_path)
         
     def _open_photoshop_file(self):
-        self._app = ps.Application(version=self.get_ps_version())
+        self._app = ps.Application(version=self._get_ps_version())
         self._app.preferences.rulerUnits = ps.Units.Inches
-        self._jpg_savepref = ps.JPEGSaveOptions(quality=self.get_jpg_quality())
+        self._jpg_savepref = ps.JPEGSaveOptions(quality=self._get_jpg_quality())
         self._app.open(str(self._psd_path.absolute()))
 
-    def has_config_settings(self):
-        return self.config_settings != None
+    def _has_config_settings(self):
+        return self._config_settings != None
 
-    def get_jpg_quality(self):
-        return self.config_settings["jpg_quality"] if self.has_config_settings() else 12
+    def _get_jpg_quality(self):
+        return self._config_settings["jpg_quality"] if self._has_config_settings() else 12
     
-    def get_ps_version(self):
-        ps_ver = self.config_settings["ps_version"]
-        return ps_ver if self.has_config_settings() and ps_ver != "" else None
+    def _get_ps_version(self):
+        ps_ver = self._config_settings["ps_version"]
+        return ps_ver if self._has_config_settings() and ps_ver != "" else None
         
+    def _get_character_encoding(self):
+        encoding = self._config_settings["char_encoding"]
+        return encoding if self._has_config_settings and encoding != "" else "mbcs"
     
     def init_sizes(self, file_path: str):
         self.size_file_name = file_path[6:-5]
@@ -188,7 +197,9 @@ class PhotoshopFiller:
             self.sizes.append(Size(json_raw_sizes['name'], json_raw_sizes['width'], json_raw_sizes['height'], json_raw_sizes['shortsize']))
 
     def init_dataframe(self, file_path):
-        self.df = pd.read_csv(file_path, dtype={'number':str})
+        columns = Helper.get_columns(file_path)
+        num_idx = Helper.find_number_column(columns)
+        self.df = pd.read_csv(file_path, encoding=self._get_character_encoding(), dtype={num_idx:str})
 
     def _get_existing_essentialcol(self):
         required_col = ['name','size','number']
@@ -209,10 +220,20 @@ class PhotoshopFiller:
 class Helper:
     def get_dir():
         return " "
+    
+    def find_number_column(columns:list[str]) -> int:
+        for x,column in enumerate(columns):
+            if column.lower() == "number":
+                return x
+        return -1
+
+    def get_columns(file_path:str) -> list[str]:
+        with open(file_path, "r") as file:
+            return file.readline().strip("\n").split(",")
 
     def get_settings():
         try:
-            with open("etc/settings.json", "r") as f:
+            with open("settings/settings.json", "r") as f:
                 return json.load(f)
         except:
             return None
