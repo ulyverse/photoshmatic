@@ -26,7 +26,7 @@ class WindowFrameManager(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
         self.title("Printing Sublimation System")
-        self['pady'] = 30
+        self['pady'] = 10
         self['padx'] = 30
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -46,9 +46,12 @@ class WindowFrameManager(tk.Tk):
                 self._mbox_error("This version of the app isn't supported anymore, please update your app to the latest version.")
                 self.destroy()
                 return None
-            
-            if setup.setup() or setup.validate_registered_device():
-                return True
+            is_valid_user = setup.validate_registered_device()
+            if is_valid_user['status'] == True:
+                if is_valid_user['is_expired'] == False:
+                    return True
+                else:
+                    self._mbox_error("Your license key has expired")
         except ConnectionError as e:
             self._mbox_error("Cannot access the server, please check your internet connection.")
         except Exception as e:
@@ -79,8 +82,8 @@ class WelcomeFrame(tk.Frame):
         self._init_widgets()
 
     def _init_widgets(self):
-        self._lblApplicationLogo = tk.Label(self, text="PHOTOMATIC", font=("Arial Bold Italic", 24))
-        self._lblApplicationLogo.grid(row=0, column=0, columnspan=2, pady=(0,50))
+        self._lblCompanyName = tk.Label(self, text="PHOTOMATIC", font=("Arial Bold Italic", 24))
+        self._lblCompanyName.grid(row=0, column=0, columnspan=2, pady=(0,50))
 
         self._lblKeycode = tk.Label(self, text="(enter keycode here)", font=self._font_style)
         self._lblKeycode.grid(row=1, column=0, pady=(0,1))
@@ -96,7 +99,7 @@ class WelcomeFrame(tk.Frame):
             key = self._txtKeycode.get()
             if setup.enter_license_code(key):
                 self.master.switch_frame(MainSublimationAppFrame)
-                messagebox.showinfo("Printing Sublimation System", "Thank you for purchasing photomatic")
+                messagebox.showinfo("Printing Sublimation System", "Thank you for purchasing Photomatic")
             else:
                 messagebox.showinfo("Printing Sublimation System", "Incorrect Keycode, Please try again")
         except (ConnectionError) as e:
@@ -120,10 +123,11 @@ class MainSublimationAppFrame(tk.Frame):
         self.columnconfigure(2, weight=2)
 
         self.rowconfigure(0)
-        self.rowconfigure(1, pad=15)
-        self.rowconfigure(2)
-        self.rowconfigure(3, pad=15)
-        self.rowconfigure(4, weight = 4)
+        self.rowconfigure(1)
+        self.rowconfigure(2, pad=15)
+        self.rowconfigure(3)
+        self.rowconfigure(4, pad=15)
+        self.rowconfigure(5, weight = 4)
         self._init_widgets()
         self.ps_filler = PhotoshopFiller()
 
@@ -196,30 +200,39 @@ class MainSublimationAppFrame(tk.Frame):
         self._put_widgets()
 
     def _put_widgets(self):
+        #0 this is hacky fix later
+        self._hacky_frame = tk.Frame(self)
+        self._hacky_frame.grid(row=0, column=0, sticky="WE", pady=(0,25), columnspan=3)
+
+        self._lblCompanyName = tk.Label(self._hacky_frame, text="PHOTOMATIC", font=("Arial Bold Italic", 24))
+        self._lblCompanyName.grid(row=0, column=0, sticky="E")
+        self._separator = ttk.Separator(self._hacky_frame, orient="horizontal")
+        self._separator.grid(row=1, column=0, ipadx=400)
+
         #1
-        self.btnPhotoshop.grid(row=0, column=0, sticky="WE", padx=(0,30))
-        self.lblPhotoshopPath.grid(row=0, column=1, sticky="W", columnspan=2)
+        self.btnPhotoshop.grid(row=1, column=0, sticky="WE", padx=(0,30))
+        self.lblPhotoshopPath.grid(row=1, column=1, sticky="W", columnspan=2)
 
         #2
-        self.btnCsv.grid(row=1, column=0, sticky="WE", padx=(0,30))
-        self.lblCsvPath.grid(row=1, column=1, sticky="W", columnspan=2)
+        self.btnCsv.grid(row=2, column=0, sticky="WE", padx=(0,30))
+        self.lblCsvPath.grid(row=2, column=1, sticky="W", columnspan=2)
 
         #3
-        self.cmbSizes.grid(row=2, column=0, sticky="WE", padx=(0,30))
+        self.cmbSizes.grid(row=3, column=0, sticky="WE", padx=(0,30))
 
         #grpTextSettings
-        self.grpTextSettings.grid(row=2, column=1, sticky="WE", padx=(0, 30))
+        self.grpTextSettings.grid(row=3, column=1, sticky="WE", padx=(0, 30))
         self.lblTextSettings.pack(side="left")
         self.cmbTextSettings.pack(side="left", padx=(0,30))
         self.checkCMYK.pack(side="left")
 
-        self.btnStart.grid(row=2, column=2, sticky="WE")
+        self.btnStart.grid(row=3, column=2, sticky="WE")
 
         #4
-        self.progressBar.grid(row=3, column=0, columnspan=3, sticky="WE", pady=(20,0))
+        self.progressBar.grid(row=4, column=0, columnspan=3, sticky="WE", pady=(20,0))
 
         #5
-        self.txtResult.grid(row=4, column=0, columnspan=3, sticky="NEWS")
+        self.txtResult.grid(row=5, column=0, columnspan=3, sticky="NEWS", pady=(0,20))
 
     def _select_psd(self):
         psd_path = filedialog.askopenfilename(title="Select Photoshop Document", filetypes=[("psd files", "*.psd *.tif")])
@@ -251,7 +264,7 @@ class MainSublimationAppFrame(tk.Frame):
     def _populate_txtResult(self):
         self._txt_refresh_text(self.txtResult)
         self._txt_append_text(self.txtResult, "REMINDERS:")
-        self._txt_append_text(self.txtResult, " - Don't click on another tab inside photoshop while the script is running")
+        self._txt_append_text(self.txtResult, " - Don't click anything inside photoshop while the script is running")
         self._txt_append_text(self.txtResult, " - Layers that you want to be changed by the csv should NOT be inside a group folder")
         self._txt_append_text(self.txtResult, " - If you have made changes to your csv, you need to reselect the file inorder to apply the changes")
         self._txt_append_text(self.txtResult, " - Text transform does't always apply! e.g. when the layer has been set to \"All Caps\"")
