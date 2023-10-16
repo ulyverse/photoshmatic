@@ -9,6 +9,7 @@ import tkinter.ttk as ttk
 from tkinter import BooleanVar
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter.simpledialog import askstring
 
 #custom module
 import setup
@@ -32,12 +33,12 @@ class WindowFrameManager(tk.Tk):
         self.grid_columnconfigure(0, weight=1)
         self._frame = None
 
-    def switch_frame(self, frame_class):
+    def switch_frame(self, frame_class, *argv):
         if self._frame is not None:
             self._frame.destroy()
 
         self._font_style = ('Arial', 12)
-        self._frame = frame_class(self, self._font_style)
+        self._frame = frame_class(self, self._font_style, *argv)
         self._frame.grid(row=0, column=0, sticky="NS")
 
     def _is_verified(self):
@@ -91,12 +92,19 @@ class WelcomeFrame(tk.Frame):
         self._txtKeycode = tk.Entry(self,width=29, font=("Consolas", 10))
         self._txtKeycode.grid(row=2, column=0)
 
-        self._btnKeycode = tk.Button(self, text="ENTER", command=self._login, font=self._font_style)
-        self._btnKeycode.grid(row=3, column=0, sticky="EW", pady=(20,0))
+        self._btnKeycode = tk.Button(self, text="ENTER", command=self._login, font=self._font_style, cursor="hand2")
+        self._btnKeycode.grid(row=3, column=0, sticky="EW", pady=(20,40))
+
+        self.lblTrialKeyCode = tk.Label(self, text="Enter trial key code", fg="blue", cursor="hand2")
+        self.lblTrialKeyCode.grid(row=4,column=0, sticky="EW")
+        self.lblTrialKeyCode.bind("<Button-1>", lambda e:self._trial())
 
     def _login(self):
+        key = self._txtKeycode.get()
+        if key == "":
+            return
+        
         try:
-            key = self._txtKeycode.get()
             if setup.enter_license_code(key):
                 self.master.switch_frame(MainSublimationAppFrame)
                 messagebox.showinfo("Printing Sublimation System", "Thank you for purchasing Photomatic")
@@ -106,14 +114,32 @@ class WelcomeFrame(tk.Frame):
             self.master._mbox_error("Cannot access the server, please check your internet connection.")
         except Exception as e:
             self.master._mbox_error(repr(e))
+    
+    def _trial(self):
+        trial_key = askstring("T", "enter trial key code here")
+
+        if trial_key == "":
+            return
+        try:
+            if setup.validate_trial_key(trial_key):
+                self.master.switch_frame(MainSublimationAppFrame, True)
+            else:
+                messagebox.showinfo("Printing Sublimation System", "Incorrect Keycode, Please try again")
+        except ConnectionError as e:
+            self._mbox_error("Cannot access the server, please check your internet connection.")
+        except Exception as e:
+            self._mbox_error(repr(e))
 
 
 class MainSublimationAppFrame(tk.Frame):
     def __dir__():
         return " "
 
-    def __init__(self, master, font):
+    def __init__(self, master, font, is_trial=False):
         tk.Frame.__init__(self, master, width=100)
+
+        if is_trial:
+            self.master.after(1000*60*30, self._expire)
 
         self.master.minsize(817,400)
         self._font_style = font
@@ -161,13 +187,17 @@ class MainSublimationAppFrame(tk.Frame):
     def update_progress_bar(self, progress):
         self.progressBar['value'] = progress
 
+    def _expire(self):
+        messagebox.showinfo("Printing Sublimation System", "Your trial has expired")
+        self.master.switch_frame(WelcomeFrame)
+
     def _init_widgets(self):
         #1
-        self.btnPhotoshop = tk.Button(self, text="Select Photoshop", command=self._select_psd, font=self._font_style)
+        self.btnPhotoshop = tk.Button(self, text="Select Photoshop", command=self._select_psd, font=self._font_style, cursor="hand2")
         self.lblPhotoshopPath = tk.Label(self, font=self._font_style)
 
         #2
-        self.btnCsv = tk.Button(self, text="Select Csv", command=self._select_csv, font=self._font_style)
+        self.btnCsv = tk.Button(self, text="Select Csv", command=self._select_csv, font=self._font_style, cursor="hand2")
         self.lblCsvPath = tk.Label(self, font=self._font_style)
 
         #3
@@ -187,7 +217,7 @@ class MainSublimationAppFrame(tk.Frame):
         self.isCMYK = BooleanVar()
         self.checkCMYK = ttk.Checkbutton(self.grpTextSettings, text="Convert image to cmyk", variable=self.isCMYK, onvalue=True, offvalue=False)
         
-        self.btnStart = tk.Button(self, text="START", command=self._start, font=self._font_style, width=15)
+        self.btnStart = tk.Button(self, text="START", command=self._start, font=self._font_style, width=15, cursor="hand2")
 
         #4
         self.progressBar = ttk.Progressbar(self)
