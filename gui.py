@@ -139,7 +139,7 @@ class MainSublimationAppFrame(tk.Frame):
         tk.Frame.__init__(self, master, width=100)
 
         if is_trial:
-            self.master.after(1000*60*30, self._expire)
+            self.master.after(1000*60*60, self._expire)
 
         self.master.minsize(817,400)
         self._font_style = font
