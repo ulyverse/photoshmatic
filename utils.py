@@ -213,8 +213,9 @@ class PhotoshopFiller:
         required_col = ['name','size',Config.get_np_number_preference()]
         existing_col = []
         for rcol in required_col:
-            if rcol in self.df.columns:
-                existing_col.append(rcol)
+            for ecol in self.df.columns:
+                if rcol in ecol.lower():
+                    existing_col.append(ecol)
         return existing_col
 
     def print_sizes(self):
