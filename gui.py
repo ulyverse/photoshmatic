@@ -15,6 +15,7 @@ from tkinter.simpledialog import askstring
 import setup
 from utils import Helper
 from utils import PhotoshopFiller
+from utils import Config
 
 
 def __dir__():
@@ -26,7 +27,7 @@ class WindowFrameManager(tk.Tk):
     
     def __init__(self):
         tk.Tk.__init__(self)
-        self.title("Printing Sublimation System")
+        self.title("Photomatic")
         self['pady'] = 10
         self['padx'] = 30
         self.grid_rowconfigure(0, weight=1)
@@ -107,9 +108,9 @@ class WelcomeFrame(tk.Frame):
         try:
             if setup.enter_license_code(key):
                 self.master.switch_frame(MainSublimationAppFrame)
-                messagebox.showinfo("Printing Sublimation System", "Thank you for purchasing Photomatic")
+                messagebox.showinfo("Photomatic", "Thank you for purchasing Photomatic")
             else:
-                messagebox.showinfo("Printing Sublimation System", "Incorrect Keycode, Please try again")
+                messagebox.showinfo("Photomatic", "Incorrect Keycode, Please try again")
         except (ConnectionError) as e:
             self.master._mbox_error("Cannot access the server, please check your internet connection.")
         except Exception as e:
@@ -124,7 +125,7 @@ class WelcomeFrame(tk.Frame):
             if setup.validate_trial_key(trial_key):
                 self.master.switch_frame(MainSublimationAppFrame, True)
             else:
-                messagebox.showinfo("Printing Sublimation System", "Incorrect Keycode, Please try again")
+                messagebox.showinfo("Photomatic", "Incorrect Keycode, Please try again")
         except ConnectionError as e:
             self._mbox_error("Cannot access the server, please check your internet connection.")
         except Exception as e:
@@ -188,7 +189,7 @@ class MainSublimationAppFrame(tk.Frame):
         self.progressBar['value'] = progress
 
     def _expire(self):
-        messagebox.showinfo("Printing Sublimation System", "Your trial has expired")
+        messagebox.showinfo("Photomatic", "Your trial has expired")
         self.master.switch_frame(WelcomeFrame)
 
     def _init_widgets(self):
@@ -234,7 +235,7 @@ class MainSublimationAppFrame(tk.Frame):
         self._hacky_frame = tk.Frame(self)
         self._hacky_frame.grid(row=0, column=0, sticky="WE", pady=(0,25), columnspan=3)
 
-        self._lblCompanyName = tk.Label(self._hacky_frame, text="PHOTOMATIC", font=("Arial Bold Italic", 24))
+        self._lblCompanyName = tk.Label(self._hacky_frame, text=Config.get_company_name(), font=("Arial Bold Italic", 24))
         self._lblCompanyName.grid(row=0, column=0, sticky="E")
         self._separator = ttk.Separator(self._hacky_frame, orient="horizontal")
         self._separator.grid(row=1, column=0, ipadx=400)

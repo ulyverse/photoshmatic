@@ -19,7 +19,7 @@ def __dir__():
 class PhotoshopFiller:
     def __dir__(self):
         return " "
-   
+
     def start(self, callback = None, convertCMYK = False):
         log = ""
         debug_cur_row_num = -1
@@ -43,7 +43,7 @@ class PhotoshopFiller:
                 file_info = []
                 for ecol in self._get_existing_essentialcol():
                     ecol_value = self.df.loc[row,ecol]
-                    if Helper.is_not_na(ecol_value):
+                    if Helper.is_cell_not_empty(ecol_value):
                         file_info.append(ecol_value)
 
                 file_format = '_'.join(file_info)
@@ -57,13 +57,13 @@ class PhotoshopFiller:
                 for col in self.df.columns:
                     debug_cur_col_num = col
                     cur_cell_value = self.df.loc[row, col]
-                    cur_cell_text = Helper.text_transform(cur_cell_value if Helper.is_not_na(cur_cell_value) else "", self.text_settings)
+                    cur_cell_text = Helper.text_transform(cur_cell_value if Helper.is_cell_not_empty(cur_cell_value) else "", self.text_settings)
                     self._fill_layers(col, cur_cell_text)
 
                 #change sizes
                 if 'size' in self._get_existing_essentialcol():
                     cur_size = self.df.loc[row,'size']
-                    if Helper.is_not_na(cur_size):
+                    if Helper.is_cell_not_empty(cur_size):
                         short = self._get_shortsize(cur_size)
                         if short != None:
                             self._fill_layers("shortsize", short)
@@ -160,7 +160,6 @@ class PhotoshopFiller:
                 activate_layer.resize(r, 100, ps.AnchorPosition.MiddleCenter if is_height == False else ps.AnchorPosition.TopCenter)
 
     def __init__(self) -> None:
-        self._config_settings = Helper.get_settings()
         self.text_settings = 0
 
     def init_photoshop(self, file_path:str):
@@ -168,33 +167,42 @@ class PhotoshopFiller:
         
     def _open_photoshop_file(self):
         self._app = ps.Application(version=self._get_ps_version())
-        self._app.preferences.rulerUnits = ps.Units.Inches
+        self._app.preferences.rulerUnits = self._get_ruler_unit()
         self._jpg_savepref = ps.JPEGSaveOptions(quality=self._get_jpg_quality())
         self._app.open(str(self._psd_path.absolute()))
 
-    def _has_config_settings(self):
-        return self._config_settings != None
+    def _get_ruler_unit(self):
+        rulerunit_pref = Config.get_rulerunit_preference()
+        rulerunit = ps.Units.Inches
+        if rulerunit_pref == UnitPreference.CENTIMETERS.value:
+            rulerunit = ps.Units.CM
+        elif rulerunit_pref == UnitPreference.PIXELS.value:
+            rulerunit = ps.Units.Pixels
+        
+        return rulerunit            
 
     def _get_jpg_quality(self):
-        return self._config_settings["jpg_quality"] if self._has_config_settings() else 12
+        return Config.get_jpg_quality()
     
     def _get_ps_version(self):
-        ps_ver = self._config_settings["ps_version"]
-        return ps_ver if self._has_config_settings() and ps_ver != "" else None
-        
+        return Config.get_ps_version()
+    
     def _get_character_encoding(self):
-        encoding = self._config_settings["char_encoding"]
-        return encoding if self._has_config_settings and encoding != "" else "mbcs"
+        return Config.get_character_encoding()
     
     def init_sizes(self, file_path: str):
         self.size_file_name = file_path[6:-5]
         self.sizes = []
-
-        with open(str(file_path)) as s:
-            json_raw = json.load(s)
-
-        for json_raw_sizes in json_raw['sizes']:
-            self.sizes.append(Size(json_raw_sizes['name'], json_raw_sizes['width'], json_raw_sizes['height'], json_raw_sizes['shortsize']))
+        try:
+            with open(str(file_path)) as s:
+                json_raw = json.load(s)
+                
+            for json_raw_sizes in json_raw['sizes']:
+                self.sizes.append(Size(json_raw_sizes['name'], json_raw_sizes['width'], json_raw_sizes['height'], json_raw_sizes['shortsize']))
+        except json.decoder.JSONDecodeError as e:
+                raise Exception(repr(e))
+        except FileNotFoundError:
+            raise Exception(f"{file_path} is missing")
 
     def init_dataframe(self, file_path):
         columns = Helper.get_columns(file_path)
@@ -202,7 +210,7 @@ class PhotoshopFiller:
         self.df = pd.read_csv(file_path, encoding=self._get_character_encoding(), dtype={num_idx:str})
 
     def _get_existing_essentialcol(self):
-        required_col = ['name','size','number']
+        required_col = ['name','size',Config.get_np_number_preference()]
         existing_col = []
         for rcol in required_col:
             if rcol in self.df.columns:
@@ -218,12 +226,12 @@ class PhotoshopFiller:
         
 
 class Helper:
-    def get_dir():
+    def __dir__():
         return " "
     
     def find_number_column(columns:list[str]) -> int:
         for x,column in enumerate(columns):
-            if column.lower() == "number":
+            if column.lower() == Config.get_np_number_preference():
                 return x
         return -1
 
@@ -231,21 +239,14 @@ class Helper:
         with open(file_path, "r") as file:
             return file.readline().strip("\n").split(",")
 
-    def get_settings():
-        try:
-            with open("settings/settings.json", "r") as f:
-                return json.load(f)
-        except:
-            return None
-
-    def try_parse(digit:str):
+    def try_parse(digit:str) -> float | None:
         try:
             num = float(digit)
             return num
         except:
             return None
 
-    def is_not_na(scalar):
+    def is_cell_not_empty(scalar) -> bool:
         return pd.isna(scalar) == False
 
     def get_textsettings():
@@ -272,7 +273,74 @@ class Helper:
             return text.capitalize()
         
         return text
+    
 
+class Config:
+    data = None
+
+    @classmethod
+    def load_config(cls):
+        if cls.data is None:
+            try:
+                with open("settings/settings.json", "r") as f:
+                    cls.data = json.load(f)
+            except json.decoder.JSONDecodeError as e:
+                raise Exception(repr(e))
+            except FileNotFoundError:
+                raise Exception("settings/settings.json is missing")
+            
+    @classmethod
+    def get_company_name(cls) -> str:
+        if cls.data is None:
+            cls.load_config()
+        company_name =  Config.data["company_name"]
+        return company_name if company_name != "" else "PHOTOMATIC"
+    
+    @classmethod
+    def get_jpg_quality(cls):
+        if cls.data is None:
+            cls.load_config()
+        data = cls.data["jpg_quality"]
+        return data if type(data) == int and data > 0 else 12
+    
+    @classmethod
+    def get_ps_version(cls):
+        if cls.data is None:
+            cls.load_config()
+        return cls.data["ps_version"] if cls.data["ps_version"] != "" else None
+    
+    @classmethod    
+    def get_character_encoding(cls):
+        if cls.data is None:
+            cls.load_config()
+        return cls.data["char_encoding"] if cls.data["char_encoding"] != "" else "mbcs"
+    
+    @classmethod    
+    def get_rulerunit_preference(cls):
+        if cls.data is None:
+            cls.load_config()
+        return cls.data["rulerunit_preference"] if cls.data["rulerunit_preference"] != "" else "in"
+    
+    @classmethod    
+    def get_np_number_preference(cls):
+        if cls.data is None:
+            cls.load_config()
+        data = cls.data["naming_preference"]["number"] 
+        return data if data != "" else "number"
+    
+    @classmethod    
+    def get_sc_resize_image(cls):
+        if cls.data is None:
+            cls.load_config()
+        data = cls.data["size_config"]["resize_image"]
+        return data if data != None and type(data) == bool else True
+    
+    @classmethod    
+    def get_sc_sizes(cls):
+        if cls.data is None:
+            cls.load_config()
+        return cls.data["size_config"]["sizes"]
+    
 
 class TextSettings(Enum):
     DEFAULT = "default"
@@ -286,3 +354,7 @@ class Parameter(Enum):
     HEIGHT = "h"
 
 
+class UnitPreference(Enum):
+    INCHES = "in"
+    CENTIMETERS = "cm"
+    PIXELS = "px"

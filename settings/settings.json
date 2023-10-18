@@ -1,6 +1,16 @@
 {
     "instructions":"please restart the app to after making changes to settings.json",
-    "char_encoding":"",
+    "ps_version":"2023",
+    "company_name":"PHOTOMATIC",
     "jpg_quality":12,
-    "ps_version":"2023"
+    "rulerunit_preference":"in",
+    "char_encoding":"",
+    "size_config":{
+        "description":"for users who separates sizes by documents",
+        "resize_image":true,
+        "sizes":["3XS", "2XS", "S", "M", "L", "XS", "XL", "2XL", "3XL", "Small", "Medium", "Large"]
+    },
+    "naming_preference":{
+        "number":""
+    }
 }
