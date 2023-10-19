@@ -327,7 +327,7 @@ class Helper:
         '''
         return  str1.casefold() == str2.casefold()
 
-    def df_isin(df:pd.DataFrame, column:str, condition:list[str]) -> pd.DataFrame:
+    def df_isin(df:pd.DataFrame, column:str, condition) -> pd.DataFrame:
         '''
             param:
             df: pandas.DataFrame
@@ -350,7 +350,7 @@ class Helper:
         except KeyError:
             raise Exception("'size' column not found in the csv")
         
-    def get_size_condition(size_name: str) -> list[str]:
+    def get_size_condition(size_name) -> list[str]:
         '''
             param:
             size_name:str, ex: XL,M,2XS
@@ -372,7 +372,7 @@ class Helper:
         
         return [size_name, size_name.lower(), size_name.upper(), size_name.capitalize()]
 
-    def find_size_column(columns:list[str]) -> str:
+    def find_size_column(columns) -> str:
         '''
             param:
             columns:list[str]
