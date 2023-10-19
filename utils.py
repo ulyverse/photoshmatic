@@ -22,8 +22,8 @@ class PhotoshopFiller:
 
     def start(self, callback = None, convertCMYK = False):
         log = ""
-        debug_cur_row_num = -1
-        debug_cur_col_num = -1
+        debug_cur_row_num = None
+        debug_cur_col_num = None
         try:
             num_rows = len(self.df.index)
             self._open_photoshop_file()
@@ -86,7 +86,7 @@ class PhotoshopFiller:
             self._app.activeDocument.close(ps.SaveOptions.DoNotSaveChanges)
         except Exception as e:
             log += repr(e)
-            if debug_cur_row_num != -1 and debug_cur_col_num != -1:
+            if debug_cur_row_num != None and debug_cur_col_num != None:
                 log += f"\nstopped at column: [{debug_cur_col_num}] row: [{debug_cur_row_num}], cell value: [{self.df.loc[debug_cur_row_num, debug_cur_col_num]}]"
         return log
 
@@ -133,7 +133,7 @@ class PhotoshopFiller:
     def _fill_layers(self, layerName: str, content: str):
         for layer in self._app.activeDocument.layers:
             layer_name = layer.name.split()
-            if layer_name[0] == layerName:
+            if len(layer_name) > 0 and layer_name[0] == layerName:
                 self._app.activeDocument.activeLayer = layer
                 layer.textItem.contents = content
 
