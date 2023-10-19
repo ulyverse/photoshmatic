@@ -235,7 +235,7 @@ class MainSublimationAppFrame(tk.Frame):
         self._hacky_frame = tk.Frame(self)
         self._hacky_frame.grid(row=0, column=0, sticky="WE", pady=(0,25), columnspan=3)
 
-        self._lblCompanyName = tk.Label(self._hacky_frame, text=Config.get_company_name(), font=("Arial Bold Italic", 24))
+        self._lblCompanyName = tk.Label(self._hacky_frame, text=Config.get_app_name(), font=("Arial Bold Italic", 24))
         self._lblCompanyName.grid(row=0, column=0, sticky="E")
         self._separator = ttk.Separator(self._hacky_frame, orient="horizontal")
         self._separator.grid(row=1, column=0, ipadx=400)

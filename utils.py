@@ -424,11 +424,11 @@ class Config:
                 raise Exception("settings/settings.json is missing")
             
     @classmethod
-    def get_company_name(cls) -> str:
+    def get_app_name(cls) -> str:
         if cls.data is None:
             cls.load_config()
-        company_name =  Config.data["company_name"]
-        return company_name if company_name != "" else "PHOTOMATIC"
+        data =  Config.data["app_name"]
+        return data if data != "" else "PHOTOMATIC"
     
     @classmethod
     def get_jpg_quality(cls):
