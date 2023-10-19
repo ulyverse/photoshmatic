@@ -25,10 +25,15 @@ class PhotoshopFiller:
         debug_cur_row_num = None
         debug_cur_col_num = None
         try:
-            num_rows = len(self.df.index)
+            self._open_csv()
             self._open_photoshop_file()
+            num_rows = len(self.df.index)
             psd_name = self._app.activeDocument.name
-            folder_path = fr"{str(self._psd_path.parent)}\{psd_name[:-4]} - {self.size_file_name}"
+            folder_path = fr"{str(self._psd_path.parent)}\{psd_name[:-4]}"
+
+            if Config.get_sc_resize_image() == True:
+                folder_path += f" - {self.size_file_name}"
+
             Path(folder_path).mkdir(exist_ok=True)
             error = self._check_param_error()
             if error != None: log += f"Parameter invalid in these layers: {error}\n"
@@ -61,7 +66,7 @@ class PhotoshopFiller:
                     self._fill_layers(col, cur_cell_text)
 
                 #change sizes
-                if 'size' in self._get_existing_essentialcol():
+                if Config.get_sc_resize_image() == True and 'size' in self._get_existing_essentialcol():
                     cur_size = self.df.loc[row,'size']
                     if Helper.is_cell_not_empty(cur_size):
                         short = self._get_shortsize(cur_size)
@@ -162,7 +167,7 @@ class PhotoshopFiller:
     def __init__(self) -> None:
         self.text_settings = 0
 
-    def init_photoshop(self, file_path:str):
+    def set_photoshop_path(self, file_path:str):
         self._psd_path = Path(file_path)
         
     def _open_photoshop_file(self):
@@ -191,6 +196,9 @@ class PhotoshopFiller:
         return Config.get_character_encoding()
     
     def init_sizes(self, file_path: str):
+        if Config.get_sc_resize_image() == False:
+            return
+
         self.size_file_name = file_path[6:-5]
         self.sizes = []
         try:
@@ -204,10 +212,15 @@ class PhotoshopFiller:
         except FileNotFoundError:
             raise Exception(f"{file_path} is missing")
 
-    def init_dataframe(self, file_path):
-        columns = Helper.get_columns(file_path)
+    def set_csv_path(self, file_path):
+        self._csv_path = file_path
+        
+    def _open_csv(self):
+        columns = Helper.get_columns(self._csv_path)
         num_idx = Helper.find_number_column(columns)
-        self.df = pd.read_csv(file_path, encoding=self._get_character_encoding(), dtype={num_idx:str})
+        self.df = pd.read_csv(self._csv_path, encoding=self._get_character_encoding(), dtype={num_idx:str})
+        if Config.get_sc_resize_image() == False:
+            self.df = Helper.reduce_df(self.df, Path(self._psd_path).name)
 
     def _get_existing_essentialcol(self):
         required_col = ['name','size',Config.get_np_number_preference()]
@@ -223,8 +236,9 @@ class PhotoshopFiller:
             print(f"{size.width} {size.height} {size.short_size} {size.name}")
 
     def print_df(self):
+        self._open_csv()
         print(self.df)
-        
+            
 
 class Helper:
     def __dir__():
@@ -274,6 +288,125 @@ class Helper:
             return text.capitalize()
         
         return text
+    
+    @classmethod
+    def get_size_in_file(cls, file_name:str) -> str | list | None:
+        '''
+            param:
+            file_name:str - must include .psd the function strips it, ex: "2XL - Lower 2022 V2.psd"
+
+            note:
+            before returning the value it removes '-' and '_' to reduce uncertainty significantly
+
+            returns:
+            the found value of config_sc_sizes either "XL" or ['S','SMALL']
+        '''
+        file_name_arr = file_name[:-4].replace("-"," ").replace("_"," ").split()
+        for file in file_name_arr:
+            for size in Config.get_sc_sizes():
+                if type(size) == list:
+                    for s in size:
+                        if cls.compare_str_insensitive(s,file):
+                            return size
+                else:
+                    if cls.compare_str_insensitive(size,file):
+                        return size
+        return None
+
+
+    def compare_str_insensitive(str1:str, str2:str) -> bool:
+        '''
+            param:
+            str1: str
+            str2: str
+
+            compare both strings case insensitivity
+
+            returns:
+            True if strings are the same otherwise False
+        '''
+        return  str1.casefold() == str2.casefold()
+
+    def df_isin(df:pd.DataFrame, column:str, condition:list[str]) -> pd.DataFrame:
+        '''
+            param:
+            df: pandas.DataFrame
+            column: str
+            condition: list[str]
+
+            note:
+            it also resets the index of the dataframe
+
+            returns:
+            returns a new DataFrame of the rows based on the condition
+
+            exception:
+            throws an error if it cannot find the size column
+        '''
+        try:
+            df = df[df[column].isin(condition)]
+            df.reset_index(drop=True,inplace=True)
+            return df
+        except KeyError:
+            raise Exception("'size' column not found in the csv")
+        
+    def get_size_condition(size_name: str) -> list[str]:
+        '''
+            param:
+            size_name:str, ex: XL,M,2XS
+
+            returns:
+            an array of both the original str, upper and lower of the size_name or an empty list
+        '''
+        if size_name == None:
+            return []
+
+        if type(size_name) == list:
+            condition = []
+            for size in size_name:
+                condition.append(size.lower())
+                condition.append(size.upper())
+                if len(size) > 3:
+                    condition.append(size.capitalize())
+            return condition
+        
+        return [size_name, size_name.lower(), size_name.upper(), size_name.capitalize()]
+
+    def find_size_column(columns:list[str]) -> str:
+        '''
+            param:
+            columns:list[str]
+
+            returns:
+            the size name case insensitively or an empty string
+        '''
+        for column in columns:
+            if column.lower() == "size":
+                return column
+        return ""
+
+    @classmethod
+    def reduce_df(cls, df:pd.DataFrame, psd_name:str) -> pd.DataFrame:
+        '''
+            param:
+            df: pandas.DataFrame
+            file_name: str
+
+            note:
+            includes df cells that are exactly file_name_size, uppercase or lowercase
+
+            edge case:
+            it does not include df cells ≠ file_name_size and df cells > 1 word
+            i.e: df cell: 2xS and file_name_size: 2Xs is not included in the new dataframe
+
+            returns:
+            a dataframe based on the size of the file name
+        '''
+
+        size_name_file = cls.get_size_in_file(psd_name)
+        condition = cls.get_size_condition(size_name_file)
+        size_name = cls.find_size_column(df.columns)
+        return cls.df_isin(df,size_name,condition)
     
 
 class Config:

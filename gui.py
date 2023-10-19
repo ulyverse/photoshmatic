@@ -160,10 +160,10 @@ class MainSublimationAppFrame(tk.Frame):
 
     def _start(self):
         if self.lblPhotoshopPath['text'] == "":
-            self.master._mbox_error("Please select a photshop document")
+            self.master._mbox_error("Please select a photoshop document")
         elif self.lblCsvPath['text'] == "":
             self.master._mbox_error("Please select a csv file")
-        elif self.cmbSizes.get() == "Select Size":
+        elif Config.get_sc_resize_image() == True and self.cmbSizes.get() == "Select Size":
             self.master._mbox_error("Please select a size")
         else:
             self._select_sizes()
@@ -203,7 +203,7 @@ class MainSublimationAppFrame(tk.Frame):
 
         #3
         self.cmbSizes = ttk.Combobox(self, font=self._font_style)
-        self.cmbSizes.state(["readonly"])
+        self.cmbSizes.state(["readonly"] if Config.get_sc_resize_image() == True else ["disabled"])
         self._populate_cmbSizes()
 
         self.grpTextSettings = tk.Frame(self)
@@ -269,14 +269,14 @@ class MainSublimationAppFrame(tk.Frame):
         psd_path = filedialog.askopenfilename(title="Select Photoshop Document", filetypes=[("psd files", "*.psd *.tif")])
         if psd_path != "":
             self.lblPhotoshopPath['text'] = psd_path
-            self.ps_filler.init_photoshop(psd_path)
+            self.ps_filler.set_photoshop_path(psd_path)
 
     def _select_csv(self):
         csv_path = filedialog.askopenfilename(title="Select CSV File", filetypes=[("csv files", "*.csv")])
 
         if csv_path != "":
             self.lblCsvPath['text'] = csv_path
-            self.ps_filler.init_dataframe(csv_path)
+            self.ps_filler.set_csv_path(csv_path)
 
     def _select_sizes(self):
         json_path = fr"sizes/{self.cmbSizes.get()}.json"
@@ -297,8 +297,7 @@ class MainSublimationAppFrame(tk.Frame):
         self._txt_append_text(self.txtResult, "REMINDERS:")
         self._txt_append_text(self.txtResult, " - Don't click anything inside photoshop while the script is running")
         self._txt_append_text(self.txtResult, " - Layers that you want to be changed by the csv should NOT be inside a group folder")
-        self._txt_append_text(self.txtResult, " - If you have made changes to your csv, you need to reselect the file inorder to apply the changes")
-        self._txt_append_text(self.txtResult, " - Text transform does't always apply! e.g. when the layer has been set to \"All Caps\"")
+        self._txt_append_text(self.txtResult, " - Text transform doesn't always apply! e.g. when the layer has been set to \"All Caps\"")
 
     def _txt_refresh_text(self, txt:tk.Text):
         txt['state'] = "normal"
