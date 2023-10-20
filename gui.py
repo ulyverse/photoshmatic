@@ -13,9 +13,9 @@ from tkinter.simpledialog import askstring
 
 #custom module
 import setup
+from configuration import Config
 from utils import Helper
 from utils import PhotoshopFiller
-from utils import Config
 
 
 def __dir__():

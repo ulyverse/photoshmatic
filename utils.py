@@ -9,10 +9,11 @@ import uuid
 from pathlib import Path
 
 #custom modules
-from sizes import Size
+from configuration import Config
+from enumeration import Parameter
 from enumeration import TextSettings
 from enumeration import UnitPreference
-from enumeration import Parameter
+from sizes import Size
 
 
 def __dir__():
@@ -308,24 +309,19 @@ class Helper:
             for size in Config.get_sc_sizes():
                 if type(size) == list:
                     for s in size:
-                        if cls.compare_str_insensitive(s,file):
+                        if cls.compare_insensitive(s,file):
                             return size
                 else:
-                    if cls.compare_str_insensitive(size,file):
+                    if cls.compare_insensitive(size,file):
                         return size
         return None
 
 
-    def compare_str_insensitive(str1:str, str2:str) -> bool:
+    def compare_insensitive(str1:str, str2:str) -> bool:
         '''
-            param:
-            str1: str
-            str2: str
-
             compare both strings case insensitivity
 
-            returns:
-            True if strings are the same otherwise False
+            returns True if strings are the same otherwise False
         '''
         return  str1.casefold() == str2.casefold()
 
@@ -376,11 +372,10 @@ class Helper:
 
     def find_size_column(columns) -> str:
         '''
-            param:
-            columns:list[str]
+            finds the 'size' column case insensitive
 
             returns:
-            the size name case insensitively or an empty string
+            the size or an empty string
         '''
         for column in columns:
             if column.lower() == "size":
@@ -390,89 +385,9 @@ class Helper:
     @classmethod
     def reduce_df(cls, df:pd.DataFrame, psd_name:str) -> pd.DataFrame:
         '''
-            param:
-            df: pandas.DataFrame
-            file_name: str
-
-            note:
-            includes df cells that are exactly file_name_size, uppercase or lowercase
-
-            edge case:
-            it does not include df cells ≠ file_name_size and df cells > 1 word
-            i.e: df cell: 2xS and file_name_size: 2Xs is not included in the new dataframe
-
-            returns:
-            a dataframe based on the size of the file name
+            gets the size in psd and returns an reduced dataframe or empty row'd dataframe
         '''
-
         size_name_file = cls.get_size_in_file(psd_name)
         condition = cls.get_size_condition(size_name_file)
         size_name = cls.find_size_column(df.columns)
         return cls.df_isin(df,size_name,condition)
-    
-
-class Config:
-    data = None
-
-    @classmethod
-    def load_config(cls):
-        if cls.data is None:
-            try:
-                with open("settings/settings.json", "r") as f:
-                    cls.data = json.load(f)
-            except json.decoder.JSONDecodeError as e:
-                raise Exception(repr(e))
-            except FileNotFoundError:
-                raise Exception("settings/settings.json is missing")
-            
-    @classmethod
-    def get_app_name(cls) -> str:
-        if cls.data is None:
-            cls.load_config()
-        data =  Config.data["app_name"]
-        return data if data != "" else "PHOTOMATIC"
-    
-    @classmethod
-    def get_jpg_quality(cls):
-        if cls.data is None:
-            cls.load_config()
-        data = cls.data["jpg_quality"]
-        return data if type(data) == int and data > 0 else 12
-    
-    @classmethod
-    def get_ps_version(cls):
-        if cls.data is None:
-            cls.load_config()
-        return cls.data["ps_version"] if cls.data["ps_version"] != "" else None
-    
-    @classmethod    
-    def get_character_encoding(cls):
-        if cls.data is None:
-            cls.load_config()
-        return cls.data["char_encoding"] if cls.data["char_encoding"] != "" else "mbcs"
-    
-    @classmethod    
-    def get_rulerunit_preference(cls):
-        if cls.data is None:
-            cls.load_config()
-        return cls.data["rulerunit_preference"] if cls.data["rulerunit_preference"] != "" else "in"
-    
-    @classmethod    
-    def get_np_number_preference(cls):
-        if cls.data is None:
-            cls.load_config()
-        data = cls.data["naming_preference"]["number"] 
-        return data if data != "" else "number"
-    
-    @classmethod    
-    def get_sc_resize_image(cls):
-        if cls.data is None:
-            cls.load_config()
-        data = cls.data["size_config"]["resize_image"]
-        return data if data != None and type(data) == bool else True
-    
-    @classmethod    
-    def get_sc_sizes(cls):
-        if cls.data is None:
-            cls.load_config()
-        return cls.data["size_config"]["sizes"]
