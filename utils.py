@@ -6,11 +6,13 @@ from photoshop import api as ps
 import hashlib
 import json
 import uuid
-from enum import Enum
 from pathlib import Path
 
 #custom modules
 from sizes import Size
+from enumeration import TextSettings
+from enumeration import UnitPreference
+from enumeration import Parameter
 
 
 def __dir__():
@@ -474,21 +476,3 @@ class Config:
         if cls.data is None:
             cls.load_config()
         return cls.data["size_config"]["sizes"]
-    
-
-class TextSettings(Enum):
-    DEFAULT = "default"
-    UPPERCASE = "uppercase"
-    LOWERCASE = "lowercase"
-    CAPITALIZE = "capitalize"
-
-
-class Parameter(Enum):
-    WIDTH = "w"
-    HEIGHT = "h"
-
-
-class UnitPreference(Enum):
-    INCHES = "in"
-    CENTIMETERS = "cm"
-    PIXELS = "px"
