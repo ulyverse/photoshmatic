@@ -15,7 +15,7 @@ from tkinter.simpledialog import askstring
 import setup
 from configuration import Config
 from utils import Helper
-from utils import PhotoshopFiller
+from utils import PhotomaticPro
 
 
 def __dir__():
@@ -156,7 +156,7 @@ class MainSublimationAppFrame(tk.Frame):
         self.rowconfigure(4, pad=15)
         self.rowconfigure(5, weight = 4)
         self._init_widgets()
-        self.ps_filler = PhotoshopFiller()
+        self.ps_filler = PhotomaticPro()
 
     def _start(self):
         if self.lblPhotoshopPath['text'] == "":

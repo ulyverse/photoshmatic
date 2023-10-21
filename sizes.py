@@ -1,3 +1,5 @@
+import json
+
 def __dir__():
     return " "
 
@@ -7,4 +9,55 @@ class Size:
         self.width = width
         self.height = height
         self.short_size = short_size
+
+    def __str__(self):
+        return f"{self.name} {self.width} {self.height} {self.short_size}"
     
+class ClothSizes:
+    '''
+        Controller for sizes
+    '''
+    def __init__(self, sizes:list[Size]) -> None:
+        self.sizes = sizes
+
+    @property
+    def sizes(self):
+        return self._sizes
+    
+    @sizes.setter
+    def sizes(self, sizes:list[Size]):
+        if len(sizes) == 0:
+            raise ValueError("Clothing sizes not found")
+        self._sizes = sizes
+
+    #method
+    def get_shortsize(self, size_name:str):
+        size = self.get_size(size_name)
+        if(size != None):
+            return size.short_size
+        
+    def get_size(self, size_name:str):
+        #use the helper compare later if importing issue get ssolved
+        for size in self.sizes:
+            if size.name.lower() == size_name.lower():
+                return size
+        return None
+    
+    def print(self):
+        for size in self.sizes:
+            print(str(size))
+
+    @classmethod
+    def read_clothing(cls, file_path):
+        try:
+            sizes = []
+            with open(str(file_path)) as s:
+                json_raw = json.load(s)
+                
+            for json_raw_sizes in json_raw['sizes']:
+                sizes.append(Size(json_raw_sizes['name'], json_raw_sizes['width'], json_raw_sizes['height'], json_raw_sizes['shortsize']))
+            return sizes
+        except json.decoder.JSONDecodeError as e:
+                raise Exception(repr(e))
+        except FileNotFoundError:
+            raise Exception(f"{file_path} is missing")    

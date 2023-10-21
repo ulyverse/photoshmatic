@@ -13,66 +13,68 @@ from configuration import Config
 from enumeration import Parameter
 from enumeration import TextSettings
 from enumeration import UnitPreference
+from sizes import ClothSizes
 from sizes import Size
 
 
 def __dir__():
     return " "
 
-class PhotoshopFiller:
+class PhotomaticPro:
     def __dir__(self):
         return " "
 
     def start(self, callback = None, convertCMYK = False):
         log = ""
-        debug_cur_row_num = None
-        debug_cur_col_num = None
+        debug_row, debug_col = None, None
         try:
             self._open_csv()
             self._open_photoshop_file()
             num_rows = len(self.df.index)
-            psd_name = self._app.activeDocument.name
-            folder_path = fr"{str(self._psd_path.parent)}\{psd_name[:-4]}"
 
-            if Config.get_sc_resize_image() == True:
-                folder_path += f" - {self.size_file_name}"
-
-            Path(folder_path).mkdir(exist_ok=True)
-            error = self._check_param_error()
+            folder_path = self._create_folderpath()
+            self._create_outputfolder(folder_path)
+            
+            error = self._check_parameter_error()
             if error != None: log += f"Parameter invalid in these layers: {error}\n"
-            self._app.activeDocument.duplicate(f"{psd_name} - placeholder")
+
+            self._create_placeholder()
+
             for row in range(num_rows):
-                debug_cur_row_num = row
+                debug_row = row
                 savedState = self._app.activeDocument.activeHistoryState
 
                 col_num = row + 1
 
-                #format file name
+                #create file name
+                #these two is combined to create file name
+
+                #create essential name
                 file_info = []
                 for ecol in self._get_existing_essentialcol():
                     ecol_value = self.df.loc[row,ecol]
-                    if Helper.is_cell_not_empty(ecol_value):
+                    if Helper.is_not_empty(ecol_value):
                         file_info.append(ecol_value)
 
                 file_format = '_'.join(file_info)
 
-                #create path
+                #create create file path
                 path = fr"{folder_path}\{col_num}"
                 if file_format != "":
                     path += f"- {file_format}"
 
                 #fill layers
                 for col in self.df.columns:
-                    debug_cur_col_num = col
+                    debug_col = col
                     cur_cell_value = self.df.loc[row, col]
-                    cur_cell_text = Helper.text_transform(cur_cell_value if Helper.is_cell_not_empty(cur_cell_value) else "", self.text_settings)
+                    cur_cell_text = Helper.text_transform(cur_cell_value if Helper.is_not_empty(cur_cell_value) else "", self.text_settings)
                     self._fill_layers(col, cur_cell_text)
 
                 #change sizes
                 if Config.get_sc_resize_image() == True and 'size' in self._get_existing_essentialcol():
                     cur_size = self.df.loc[row,'size']
-                    if Helper.is_cell_not_empty(cur_size):
-                        short = self._get_shortsize(cur_size)
+                    if Helper.is_not_empty(cur_size):
+                        short = self.clothing.get_shortsize(cur_size)
                         if short != None:
                             self._fill_layers("shortsize", short)
 
@@ -87,6 +89,8 @@ class PhotoshopFiller:
                 if convertCMYK:
                     self._convert_to_cmyk(path)
 
+                #pass the variables to callback not make the calculations inside the start() 
+                #start() shouldn't be concerned with any progress.
                 progress = col_num/num_rows*100
                 if callback != None:
                     callback(progress)
@@ -94,9 +98,25 @@ class PhotoshopFiller:
             self._app.activeDocument.close(ps.SaveOptions.DoNotSaveChanges)
         except Exception as e:
             log += repr(e)
-            if debug_cur_row_num != None and debug_cur_col_num != None:
-                log += f"\nstopped at column: [{debug_cur_col_num}] row: [{debug_cur_row_num}], cell value: [{self.df.loc[debug_cur_row_num, debug_cur_col_num]}]"
+            if debug_row != None and debug_col != None:
+                log += f"\nstopped at column: [{debug_col}] row: [{debug_row}], cell: [{self.df.loc[debug_row, debug_col]}]"
         return log
+    
+    def _create_folderpath(self) -> str:
+        psd_name = self._app.activeDocument.name
+        folder_path = fr"{str(self._psd_path.parent)}\{psd_name[:-4]}"
+
+        if Config.get_sc_resize_image() == True:
+            folder_path += f" - {self.clothing_name}"
+
+        return folder_path
+    
+    def _create_outputfolder(self, folder_path):
+        Path(folder_path).mkdir(exist_ok=True)
+
+    def _create_placeholder(self):
+        psd_name = self._app.activeDocument.name
+        self._app.activeDocument.duplicate(f"{psd_name} - placeholder")
 
     def _convert_to_cmyk(self, path):
         file_type = ".jpg"
@@ -106,25 +126,13 @@ class PhotoshopFiller:
 
     def _change_doc_size(self, size_name) -> bool:
         size_found = False
-        size = self._get_size(size_name)
+        size = self.clothing.get_size(size_name)
         if(size != None):
             self._app.activeDocument.resizeImage(size.width, size.height, self._app.activeDocument.resolution)
             size_found = True
-
         return size_found
     
-    def _get_shortsize(self, size_name):
-        size = self._get_size(size_name)
-        if(size != None):
-            return size.short_size
-    
-    def _get_size(self, size_name):
-        for size in self.sizes:
-            if size.name == size_name:
-                return size
-        return None
-    
-    def _check_param_error(self):
+    def _check_parameter_error(self):
         error = set()
         for layer in self._app.activeDocument.layers:
             layer_name = layer.name.split()
@@ -202,18 +210,8 @@ class PhotoshopFiller:
         if Config.get_sc_resize_image() == False:
             return
 
-        self.size_file_name = file_path[6:-5]
-        self.sizes = []
-        try:
-            with open(str(file_path)) as s:
-                json_raw = json.load(s)
-                
-            for json_raw_sizes in json_raw['sizes']:
-                self.sizes.append(Size(json_raw_sizes['name'], json_raw_sizes['width'], json_raw_sizes['height'], json_raw_sizes['shortsize']))
-        except json.decoder.JSONDecodeError as e:
-                raise Exception(repr(e))
-        except FileNotFoundError:
-            raise Exception(f"{file_path} is missing")
+        self.clothing_name = file_path[6:-5]
+        self.clothing = ClothSizes(ClothSizes.read_clothing(file_path))
 
     def set_csv_path(self, file_path):
         self._csv_path = file_path
@@ -246,40 +244,40 @@ class PhotoshopFiller:
 class Helper:
     def __dir__():
         return " "
-    
+    #SPREADSHEET
     def find_number_column(columns:list[str]) -> int:
         for x,column in enumerate(columns):
             if column.lower() == Config.get_np_number_preference():
                 return x
         return -1
-
+    #SPREADSHEET
     def get_columns(file_path:str) -> list[str]:
         with open(file_path, "r") as file:
             return file.readline().strip("\n").split(",")
-
+    #HELPER
     def try_parse(digit:str) -> float | None:
         try:
             num = float(digit)
             return num
         except:
             return None
-
-    def is_cell_not_empty(scalar) -> bool:
+    #SPREADSHEET
+    def is_not_empty(scalar) -> bool:
         return pd.isna(scalar) == False
-
+    #PHOTOMATIC?
     def get_textsettings():
         txtset = list()
         for text_setting in TextSettings:
             txtset.append(text_setting.value)
 
         return txtset
-
+    #HELPER
     def get_uniq_identifier():
         return hashlib.md5((Helper.get_mad()+"hehexd").encode("utf-8")).hexdigest()
-    
+    #HELPER
     def get_mad():
         return ':'.join(("%012X" % uuid.getnode())[i:i+2] for i in range(0, 12, 2))
-
+    #HELPER?
     def text_transform(text:str, text_settings:str) -> str:
         if text_settings == TextSettings.DEFAULT.value:
             return text
@@ -291,7 +289,7 @@ class Helper:
             return text.capitalize()
         
         return text
-    
+    #HELPER
     @classmethod
     def get_size_in_file(cls, file_name:str) -> str | list | None:
         '''
@@ -316,7 +314,7 @@ class Helper:
                         return size
         return None
 
-
+    #HELPER
     def compare_insensitive(str1:str, str2:str) -> bool:
         '''
             compare both strings case insensitivity
@@ -324,7 +322,7 @@ class Helper:
             returns True if strings are the same otherwise False
         '''
         return  str1.casefold() == str2.casefold()
-
+    #SS
     def df_isin(df:pd.DataFrame, column:str, condition) -> pd.DataFrame:
         '''
             param:
@@ -347,7 +345,7 @@ class Helper:
             return df
         except KeyError:
             raise Exception("'size' column not found in the csv")
-        
+    #HELPER?
     def get_size_condition(size_name) -> list[str]:
         '''
             param:
@@ -369,7 +367,7 @@ class Helper:
             return condition
         
         return [size_name, size_name.lower(), size_name.upper(), size_name.capitalize()]
-
+    #SS
     def find_size_column(columns) -> str:
         '''
             finds the 'size' column case insensitive
@@ -381,7 +379,7 @@ class Helper:
             if column.lower() == "size":
                 return column
         return ""
-
+    #SS
     @classmethod
     def reduce_df(cls, df:pd.DataFrame, psd_name:str) -> pd.DataFrame:
         '''
