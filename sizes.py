@@ -4,6 +4,9 @@ def __dir__():
     return " "
 
 class Size:
+    def __dir__(self):
+        return " "
+    
     def __init__(self, name: str, width: float, height: float, short_size: str) -> None:
         self.name = name
         self.width = width
@@ -17,6 +20,9 @@ class ClothSizes:
     '''
         Controller for sizes
     '''
+    def __dir__(self):
+        return " "
+
     def __init__(self, sizes:list[Size]) -> None:
         self.sizes = sizes
 
@@ -60,4 +66,4 @@ class ClothSizes:
         except json.decoder.JSONDecodeError as e:
                 raise Exception(repr(e))
         except FileNotFoundError:
-            raise Exception(f"{file_path} is missing")    
+            raise Exception(f"{file_path} is missing")
