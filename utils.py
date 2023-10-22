@@ -9,6 +9,7 @@ from pathlib import Path
 
 #custom modules
 from configuration import Config
+from data import PandasDataTable
 from enumeration import Parameter
 from enumeration import TextSettings
 from enumeration import UnitPreference
@@ -21,70 +22,79 @@ def __dir__():
 class PhotomaticPro:
     def __dir__(self):
         return " "
+    
+    def __init__(self) -> None:
+        self.text_settings = None
+        self.data = None
+        self.clothing = None
 
-    def start(self, callback = None, convertCMYK = False):
+    def start(
+            self, 
+            datatable_path:str, 
+            document_path:str, 
+            clothing_path:str, 
+            convert_cmyk = False, 
+            text_settings = TextSettings.DEFAULT,
+            progress_callback = False
+            ):
         log = ""
-        debug_row, debug_col = None, None
-        try:
-            self._open_csv()
-            self._open_photoshop_file()
-            num_rows = len(self.df.index)
 
-            folder_path = self._create_folderpath()
-            self._create_outputfolder(folder_path)
-            
-            error = self._check_parameter_error()
-            if error != None: log += f"Parameter invalid in these layers: {error}\n"
+        self._open_datatable(datatable_path)
+        self._transform_datatable(text_settings)
+        self.open_photoshop_file()
 
-            self._create_placeholder()
+        folder_path = self._create_folderpath()
+        self._create_outputfolder(folder_path)
+        
+        error = self._check_parameter_error()
+        if error != None: log += f"Parameter invalid in these layers: {error}\n"
 
-            for row in range(num_rows):
-                debug_row = row
-                savedState = self._app.activeDocument.activeHistoryState
-                row_num = row + 1
+        self._copy_document()
 
-                #get cell values and fill layers
-                for col in self.df.columns:
-                    debug_col = col
-                    cur_cell_value = self.df.loc[row, col]
-                    cur_cell_text = Helper.text_transform(cur_cell_value if Helper.is_not_empty(cur_cell_value) else "", self.text_settings)
-                    self._fill_layers(col, cur_cell_text)
+        for row in self.data.iterate_rows():
+            #save state
+            savedState = self._app.activeDocument.activeHistoryState
 
-                #change sizes
-                if Config.get_sc_resize_image() == True and 'size' in self._get_existing_filenamecol():
-                    cur_size = self.df.loc[row,'size']
-                    if Helper.is_not_empty(cur_size):
-                        short = self.clothing.get_shortsize(cur_size)
-                        if short != None:
-                            self._fill_layers("shortsize", short)
+            row_idx = row[0]
+            #row_num should be based on either row_idx + 1 or if Index column exist get that current existing Index.
+            row_num = (row_idx + 1)
 
-                    size_found = self._change_doc_size(cur_size)
+            for col, cell in row[1].items():
+                self._fill_layers(col, cell)
 
-                    if size_found == False:
-                        log += f"picture #{row_num} size not found\n"
+            if Config.get_sc_resize_image() == True and self.data.does_column_exist('size'):
+                size = self.data.at(row_idx, 'size')
+                if not self.data.is_empty(size):
+                    shortsize = self.clothing.get_shortsize(size)
+                    if shortsize != None:
+                        self._fill_layers("shortsize", shortsize)
 
-                #create file
-                file_format = self._create_fileformat(row)
-                path = self._create_filepath(folder_path, row_num, file_format)
-                self._app.activeDocument.saveAs(path, self._jpg_savepref)
+                size_found = self._change_doc_size(size)
+                if size_found == False:
+                    log += f"picture #{row_num} size not found\n"
 
-                self._app.activeDocument.activeHistoryState = savedState
+            #create file
+            file_format = self._create_fileformat(row_idx)
+            path = self._create_filepath(folder_path, row_num, file_format)
+            self._app.activeDocument.saveAs(path, self._jpg_savepref)
 
-                if convertCMYK:
-                    self._convert_to_cmyk(path)
+            #restore saved state
+            self._app.activeDocument.activeHistoryState = savedState
 
-                #pass the variables to callback not make the calculations inside the start() 
-                #start() shouldn't be concerned with any progress.
-                progress = row_num/num_rows*100
-                if callback != None:
-                    callback(progress)
+            if convert_cmyk: self._convert_to_cmyk(path)
 
-            self._app.activeDocument.close(ps.SaveOptions.DoNotSaveChanges)
-        except Exception as e:
-            log += repr(e)
-            if debug_row is not None and debug_col is not None:
-                log += f"\nstopped at column: [{debug_col}] row: [{debug_row}], cell: [{self.df.loc[debug_row, debug_col]}]"
+        self._app.activeDocument.close(ps.SaveOptions.DoNotSaveChanges)
         return log
+    
+    def _transform_datatable(self, text_setting = TextSettings.DEFAULT):
+        if text_setting == TextSettings.DEFAULT:
+            return
+        elif text_setting == TextSettings.UPPERCASE:
+            self.data.transform(lambda s: s.upper() if type(s) == str else s)
+        elif text_setting == TextSettings.LOWERCASE:
+            self.data.transform(lambda s: s.lower() if type(s) == str else s)
+        elif text_setting == TextSettings.CAPITALIZE:
+            self.data.transform(lambda s: s.capitalize() if type(s) == str else s)
     
     def _create_folderpath(self) -> str:
         psd_name = self._app.activeDocument.name
@@ -98,7 +108,7 @@ class PhotomaticPro:
     def _create_outputfolder(self, folder_path):
         Path(folder_path).mkdir(exist_ok=True)
 
-    def _create_placeholder(self):
+    def _copy_document(self):
         psd_name = self._app.activeDocument.name
         self._app.activeDocument.duplicate(f"{psd_name} - placeholder")
 
@@ -121,25 +131,25 @@ class PhotomaticPro:
         for layer in self._app.activeDocument.layers:
             layer_name = layer.name.split()
             if len(layer_name) > 1:
-                is_param_error = True if self._get_param_digit(layer_name[1]) == None else False
+                is_param_error = True if self._get_parameter_digit(layer_name[1]) == None else False
                 if is_param_error and layer.name not in error:
                     error.add(layer.name)
         if len(error) > 0:
             return error
                     
-    def _get_param_digit(self, val):
+    def _get_parameter_digit(self, val):
         return Helper.try_parse(val) if val[0].isdigit() else Helper.try_parse(val[2:])
 
-    def _fill_layers(self, layerName: str, content: str):
+    def _fill_layers(self, layer_name: str, content: str):
         for layer in self._app.activeDocument.layers:
             layer_name = layer.name.split()
-            if len(layer_name) > 0 and layer_name[0] == layerName:
+            if len(layer_name) > 0 and layer_name[0] == layer_name:
                 self._app.activeDocument.activeLayer = layer
                 layer.textItem.contents = content
 
                 if len(layer_name) > 1:
                     parameter = layer_name[1]
-                    max = self._get_param_digit(parameter)
+                    max = self._get_parameter_digit(parameter)
                     if max != None:
                         self._exceed_length_param(max, parameter[:1])
                         
@@ -159,16 +169,13 @@ class PhotomaticPro:
             else:
                 activate_layer.resize(r, 100, ps.AnchorPosition.MiddleCenter if is_height == False else ps.AnchorPosition.TopCenter)
 
-    def __init__(self) -> None:
-        self.text_settings = 0
-
     def set_photoshop_path(self, file_path:str):
         self._psd_path = Path(file_path)
         
-    def _open_photoshop_file(self):
-        self._app = ps.Application(version=self._get_ps_version())
+    def open_photoshop_file(self):
+        self._app = ps.Application(version=Config.get_ps_version())
         self._app.preferences.rulerUnits = self._get_ruler_unit()
-        self._jpg_savepref = ps.JPEGSaveOptions(quality=self._get_jpg_quality())
+        self._jpg_savepref = ps.JPEGSaveOptions(quality=Config.get_jpg_quality())
         self._app.open(str(self._psd_path.absolute()))
 
     def _get_ruler_unit(self):
@@ -179,38 +186,25 @@ class PhotomaticPro:
         elif rulerunit_pref == UnitPreference.PIXELS.value:
             rulerunit = ps.Units.Pixels
         
-        return rulerunit            
+        return rulerunit
 
-    def _get_jpg_quality(self):
-        return Config.get_jpg_quality()
-    
-    def _get_ps_version(self):
-        return Config.get_ps_version()
-    
-    def _get_character_encoding(self):
-        return Config.get_character_encoding()
-    
-    def init_sizes(self, file_path: str):
+    def _open_sizes(self, file_path: str):
         if Config.get_sc_resize_image() == False:
             return
 
         self.clothing_name = file_path[6:-5]
         self.clothing = ClothSizes(ClothSizes.read_clothing(file_path))
-
-    def set_csv_path(self, file_path):
-        self._csv_path = file_path
         
-    def _open_csv(self):
-        columns = Helper.get_columns(self._csv_path)
-        num_idx = Helper.find_number_column(columns)
-        self.df = pd.read_csv(self._csv_path, encoding=self._get_character_encoding(), dtype={num_idx:str})
+    def _open_datatable(self, datatable_path):
+        self.data = PandasDataTable(datatable_path, encoding=Config.get_character_encoding())
         if Config.get_sc_resize_image() == False:
-            self.df = Helper.reduce_df(self.df, Path(self._psd_path).name)
+            condition = Helper.get_size_condition(self._app.activeDocument.name)#side effect if activedocument isn't the right one
+            self.data.filter_isin('size',condition)
 
     def _create_fileformat(self, row):
         file_info = []
         for ecol in self._get_existing_filenamecol():
-            ecol_value = self.df.loc[row,ecol]
+            ecol_value = self.data.at(row,ecol)
             if Helper.is_not_empty(ecol_value):
                 file_info.append(ecol_value)
 
@@ -230,7 +224,7 @@ class PhotomaticPro:
         required_col = ['name','size',Config.get_np_number_preference()]
         existing_col = []
         for rcol in required_col:
-            for ecol in self.df.columns:
+            for ecol in self.data.columns:
                 if rcol in ecol.lower():
                     existing_col.append(ecol)
         return existing_col
@@ -239,61 +233,49 @@ class PhotomaticPro:
         self.clothing.print()
 
     def print_df(self):
-        self._open_csv()
-        print(self.df)
-            
+        self.data.print()
+
 
 class Helper:
     def __dir__():
         return " "
-    #SPREADSHEET
-    def find_number_column(columns:list[str]) -> int:
-        for x,column in enumerate(columns):
-            if column.lower() == Config.get_np_number_preference():
-                return x
-        return -1
-    #SPREADSHEET
-    def get_columns(file_path:str) -> list[str]:
-        with open(file_path, "r") as file:
-            return file.readline().strip("\n").split(",")
-    #HELPER
+
+    #PURE HELPER
     def try_parse(digit:str) -> float | None:
         try:
             num = float(digit)
             return num
         except:
             return None
-    #SPREADSHEET
-    def is_not_empty(scalar) -> bool:
-        return pd.isna(scalar) == False
-    #PHOTOMATIC?
+        
+    #PURE HELPER
+    @classmethod
+    def compare_insensitive(cls, str1:str, str2:str) -> bool:
+        '''
+            compare both strings case insensitivity
+
+            returns True if strings are the same otherwise False
+        '''
+        return  str1.lower() == str2.lower()
+
+    #GUI CMB PHOTOMATIC
     def get_textsettings():
         txtset = list()
         for text_setting in TextSettings:
             txtset.append(text_setting.value)
-
         return txtset
-    #HELPER
+
+    #SETUP HELPER
     def get_uniq_identifier():
         return hashlib.md5((Helper.get_mad()+"hehexd").encode("utf-8")).hexdigest()
-    #HELPER
+    
+    #SETUP HELPER
     def get_mad():
         return ':'.join(("%012X" % uuid.getnode())[i:i+2] for i in range(0, 12, 2))
-    #HELPER?
-    def text_transform(text:str, text_settings:str) -> str:
-        if text_settings == TextSettings.DEFAULT.value:
-            return text
-        elif text_settings == TextSettings.UPPERCASE.value:
-            return text.upper()
-        elif text_settings == TextSettings.LOWERCASE.value:
-            return text.lower()
-        elif text_settings == TextSettings.CAPITALIZE.value:
-            return text.capitalize()
-        
-        return text
-    #HELPER
+
+    #PHOTOMATIC HELPER
     @classmethod
-    def get_size_in_file(cls, file_name:str) -> str | list | None:
+    def extract_size_in_file(cls, document_name:str) -> str | list | None:
         '''
             param:
             file_name:str - must include .psd the function strips it, ex: "2XL - Lower 2022 V2.psd"
@@ -304,7 +286,7 @@ class Helper:
             returns:
             the found value of config_sc_sizes either "XL" or ['S','SMALL']
         '''
-        file_name_arr = file_name[:-4].replace("-"," ").replace("_"," ").split()
+        file_name_arr = document_name[:-4].replace("-"," ").replace("_"," ").split()
         for file in file_name_arr:
             for size in Config.get_sc_sizes():
                 if type(size) == list:
@@ -315,47 +297,20 @@ class Helper:
                     if cls.compare_insensitive(size,file):
                         return size
         return None
-
-    #HELPER
-    def compare_insensitive(str1:str, str2:str) -> bool:
-        '''
-            compare both strings case insensitivity
-
-            returns True if strings are the same otherwise False
-        '''
-        return  str1.casefold() == str2.casefold()
-    #SS
-    def df_isin(df:pd.DataFrame, column:str, condition) -> pd.DataFrame:
+    
+    #PHOTOMATIC HELPER
+    @classmethod
+    def get_size_condition(cls, document) -> list[str]:
         '''
             param:
-            df: pandas.DataFrame
-            column: str
-            condition: list[str]
+            document: document_name
 
-            note:
-            it also resets the index of the dataframe
-
-            returns:
-            returns a new DataFrame of the rows based on the condition
-
-            exception:
-            throws an error if it cannot find the size column
-        '''
-        try:
-            df = df[df[column].isin(condition)]
-            df.reset_index(drop=True,inplace=True)
-            return df
-        except KeyError:
-            raise Exception("'size' column not found in the csv")
-    #HELPER?
-    def get_size_condition(size_name) -> list[str]:
-        '''
-            param:
-            size_name:str, ex: XL,M,2XS
+            extracts the 'size' in the document_name and (see return)
 
             returns:
             an array of both the original str, upper and lower of the size_name or an empty list
         '''
+        size_name = cls.extract_size_in_file(document)
         if size_name == None:
             return []
 
@@ -369,25 +324,3 @@ class Helper:
             return condition
         
         return [size_name, size_name.lower(), size_name.upper(), size_name.capitalize()]
-    #SS
-    def find_size_column(columns) -> str:
-        '''
-            finds the 'size' column case insensitive
-
-            returns:
-            the size or an empty string
-        '''
-        for column in columns:
-            if column.lower() == "size":
-                return column
-        return ""
-    #SS
-    @classmethod
-    def reduce_df(cls, df:pd.DataFrame, psd_name:str) -> pd.DataFrame:
-        '''
-            gets the size in psd and returns an reduced dataframe or empty row'd dataframe
-        '''
-        size_name_file = cls.get_size_in_file(psd_name)
-        condition = cls.get_size_condition(size_name_file)
-        size_name = cls.find_size_column(df.columns)
-        return cls.df_isin(df,size_name,condition)

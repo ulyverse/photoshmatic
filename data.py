@@ -2,8 +2,8 @@ import pandas as pd
 from pandas.errors import EmptyDataError
 
 class PandasDataTable():
-    def __init__(self, path):
-        self.set_dataframe(path)
+    def __init__(self, path, encoding):
+        self.set_dataframe(path, encoding)
 
     @property
     def columns(self):
@@ -13,22 +13,25 @@ class PandasDataTable():
     def at(self, row, col):
         return self.__dataframe.at[row,col]
     
-    def check_column_exist(self, column_name:str) -> bool:
+    def does_column_exist(self, column_name:str) -> bool:
         '''
             returns true if column_name exist in the dataframe's column else false
         '''
         return column_name.lower() in self.columns
 
-    def filter_isin(self, column, condition, drop_option=True):
+    def filter_isin(self, column, condition:list[str], drop_option:bool=True):
         df = self.__dataframe
-        self.__dataframe = df[df[column].isin([condition])]
+        self.__dataframe = df[df[column].isin(condition)]
         self.__dataframe.reset_index(drop=drop_option, inplace=True)
 
-    def get_columns(self):
-        return self.__dataframe.columns
+    def get_column(self, column_name:str):
+        '''
+            returns the lowercase of column_name or None if doesn't exist
+        '''
+        return column_name.lower() if self.does_column_exist(column_name) else None
     
     def is_empty(self, value):
-        return pd.isna(value)
+        return value == ""
 
     def iterate_rows(self):
         for row in self.__dataframe.iterrows():
@@ -40,14 +43,18 @@ class PandasDataTable():
         '''
         print(self.__dataframe)
 
-    def set_dataframe(self, path):
+    def set_dataframe(self, path, encoding):
         '''
-        creates a dataframe that has the columns set to str, and lowercased
+        creates a dataframe that has the columns set to str and lowercased, and replaces the empty cell with ""
         '''
         try:
-            self.__dataframe = pd.read_csv(path, dtype=str)
+            self.__dataframe = pd.read_csv(path, encoding=encoding, dtype=str)
             self.__dataframe.columns = self.columns.str.lower()
+            self.__dataframe.fillna("",inplace=True)
         except EmptyDataError:
             raise EmptyDataError('The file is empty.')
         except FileNotFoundError:
             raise Exception('The file does not exist.')
+        
+    def transform(self, option):
+        self.__dataframe = self.__dataframe.applymap(option)
