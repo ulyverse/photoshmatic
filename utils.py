@@ -4,7 +4,6 @@ from photoshop import api as ps
 
 #built-in modules
 import hashlib
-import json
 import uuid
 from pathlib import Path
 
@@ -14,7 +13,6 @@ from enumeration import Parameter
 from enumeration import TextSettings
 from enumeration import UnitPreference
 from sizes import ClothSizes
-from sizes import Size
 
 
 def __dir__():
@@ -43,27 +41,9 @@ class PhotomaticPro:
             for row in range(num_rows):
                 debug_row = row
                 savedState = self._app.activeDocument.activeHistoryState
+                row_num = row + 1
 
-                col_num = row + 1
-
-                #create file name
-                #these two is combined to create file name
-
-                #create essential name
-                file_info = []
-                for ecol in self._get_existing_essentialcol():
-                    ecol_value = self.df.loc[row,ecol]
-                    if Helper.is_not_empty(ecol_value):
-                        file_info.append(ecol_value)
-
-                file_format = '_'.join(file_info)
-
-                #create create file path
-                path = fr"{folder_path}\{col_num}"
-                if file_format != "":
-                    path += f"- {file_format}"
-
-                #fill layers
+                #get cell values and fill layers
                 for col in self.df.columns:
                     debug_col = col
                     cur_cell_value = self.df.loc[row, col]
@@ -71,7 +51,7 @@ class PhotomaticPro:
                     self._fill_layers(col, cur_cell_text)
 
                 #change sizes
-                if Config.get_sc_resize_image() == True and 'size' in self._get_existing_essentialcol():
+                if Config.get_sc_resize_image() == True and 'size' in self._get_existing_filenamecol():
                     cur_size = self.df.loc[row,'size']
                     if Helper.is_not_empty(cur_size):
                         short = self.clothing.get_shortsize(cur_size)
@@ -81,9 +61,13 @@ class PhotomaticPro:
                     size_found = self._change_doc_size(cur_size)
 
                     if size_found == False:
-                        log += f"picture #{col_num} size not found\n"
+                        log += f"picture #{row_num} size not found\n"
 
+                #create file
+                file_format = self._create_fileformat(row)
+                path = self._create_filepath(folder_path, row_num, file_format)
                 self._app.activeDocument.saveAs(path, self._jpg_savepref)
+
                 self._app.activeDocument.activeHistoryState = savedState
 
                 if convertCMYK:
@@ -91,14 +75,14 @@ class PhotomaticPro:
 
                 #pass the variables to callback not make the calculations inside the start() 
                 #start() shouldn't be concerned with any progress.
-                progress = col_num/num_rows*100
+                progress = row_num/num_rows*100
                 if callback != None:
                     callback(progress)
 
             self._app.activeDocument.close(ps.SaveOptions.DoNotSaveChanges)
         except Exception as e:
             log += repr(e)
-            if debug_row != None and debug_col != None:
+            if debug_row is not None and debug_col is not None:
                 log += f"\nstopped at column: [{debug_col}] row: [{debug_row}], cell: [{self.df.loc[debug_row, debug_col]}]"
         return log
     
@@ -223,7 +207,26 @@ class PhotomaticPro:
         if Config.get_sc_resize_image() == False:
             self.df = Helper.reduce_df(self.df, Path(self._psd_path).name)
 
-    def _get_existing_essentialcol(self):
+    def _create_fileformat(self, row):
+        file_info = []
+        for ecol in self._get_existing_filenamecol():
+            ecol_value = self.df.loc[row,ecol]
+            if Helper.is_not_empty(ecol_value):
+                file_info.append(ecol_value)
+
+        file_name = '_'.join(file_info)
+        return file_name
+    
+    def _create_filepath(self, folder_path, row_num, file_row_names):
+        #create create file path
+        path = fr"{folder_path}\{row_num}"
+        if file_row_names != "":
+            path += f"- {file_row_names}"
+        
+        return path
+
+    def _get_existing_filenamecol(self):
+        #THIS CAN BE CACHED?
         required_col = ['name','size',Config.get_np_number_preference()]
         existing_col = []
         for rcol in required_col:
@@ -233,8 +236,7 @@ class PhotomaticPro:
         return existing_col
 
     def print_sizes(self):
-        for size in self.sizes:
-            print(f"{size.width} {size.height} {size.short_size} {size.name}")
+        self.clothing.print()
 
     def print_df(self):
         self._open_csv()
