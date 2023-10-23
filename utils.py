@@ -88,6 +88,19 @@ class Helper:
         
         return [size_name, size_name.lower(), size_name.upper(), size_name.capitalize()]
 
+    def get_textsetting(settings):
+        if settings == TextSettings.DEFAULT.value:
+            return TextSettings.DEFAULT
+        elif settings == TextSettings.UPPERCASE.value:
+            return TextSettings.UPPERCASE
+        elif settings == TextSettings.LOWERCASE.value:
+            return TextSettings.LOWERCASE
+        elif settings == TextSettings.CAPITALIZE.value:
+            return TextSettings.CAPITALIZE
+        else:
+            return None
+
+
     #GUI CMB PHOTOMATIC
     def get_textsettings():
         txtset = list()

@@ -49,7 +49,7 @@ class ClothSizes:
         
     def get_size(self, size_name:str):
         for size in self.sizes:
-            if Helper.compare_insensitive(size, size_name):
+            if Helper.compare_insensitive(size.name, size_name):
                 return size
         return None
     

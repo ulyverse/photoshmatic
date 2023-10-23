@@ -11,9 +11,10 @@ from tkinter.simpledialog import askstring
 
 #custom module
 import setup
+from appcontroller import PhotomaticPro
 from configuration import Config
 from utils import Helper
-from utils import PhotomaticPro
+
 
 
 def __dir__():
@@ -154,7 +155,7 @@ class MainSublimationAppFrame(tk.Frame):
         self.rowconfigure(4, pad=15)
         self.rowconfigure(5, weight = 4)
         self._init_widgets()
-        self.ps_filler = PhotomaticPro()
+        self.photomatic = PhotomaticPro()
 
     def _expire(self):
         messagebox.showinfo("Photomatic", "Your trial has expired")
@@ -163,11 +164,11 @@ class MainSublimationAppFrame(tk.Frame):
     def _init_widgets(self):
         #1
         self.btnPhotoshop = tk.Button(self, text="Select Photoshop", command=self._select_document, font=self._font_style, cursor="hand2")
-        self.lblPhotoshopPath = tk.Label(self, font=self._font_style)
+        self.lblDocumentPath = tk.Label(self, font=self._font_style)
 
         #2
         self.btnCsv = tk.Button(self, text="Select Csv", command=self._select_datatable, font=self._font_style, cursor="hand2")
-        self.lblCsvPath = tk.Label(self, font=self._font_style)
+        self.lblDataTablePath = tk.Label(self, font=self._font_style)
 
         #3
         self.cmbSizes = ttk.Combobox(self, font=self._font_style)
@@ -194,7 +195,7 @@ class MainSublimationAppFrame(tk.Frame):
         #5
         self.txtResult = tk.Text(self, width=100, height=10)
         self.txtResult['state'] = "disabled"
-        self._populate_txtResult()
+        self._refresh_text_box()
 
         self._put_widgets()
 
@@ -205,7 +206,7 @@ class MainSublimationAppFrame(tk.Frame):
         self.cmbSizes['values'] = sizes
         self.cmbSizes.current(0)
 
-    def _populate_txtResult(self):
+    def _refresh_text_box(self):
         self._txt_refresh_text(self.txtResult)
         self._txt_append_text(self.txtResult, "REMINDERS:")
         self._txt_append_text(self.txtResult, " - Don't click anything inside photoshop while the script is running")
@@ -224,11 +225,11 @@ class MainSublimationAppFrame(tk.Frame):
 
         #1
         self.btnPhotoshop.grid(row=1, column=0, sticky="WE", padx=(0,30))
-        self.lblPhotoshopPath.grid(row=1, column=1, sticky="W", columnspan=2)
+        self.lblDocumentPath.grid(row=1, column=1, sticky="W", columnspan=2)
 
         #2
         self.btnCsv.grid(row=2, column=0, sticky="WE", padx=(0,30))
-        self.lblCsvPath.grid(row=2, column=1, sticky="W", columnspan=2)
+        self.lblDataTablePath.grid(row=2, column=1, sticky="W", columnspan=2)
 
         #3
         self.cmbSizes.grid(row=3, column=0, sticky="WE", padx=(0,30))
@@ -250,38 +251,36 @@ class MainSublimationAppFrame(tk.Frame):
     def _select_datatable(self):
         datatable_path = filedialog.askopenfilename(title="Select CSV File", filetypes=[("csv files", "*.csv")])
         if datatable_path != "":
-            self.lblCsvPath['text'] = datatable_path
+            self.lblDataTablePath['text'] = datatable_path
 
     def _select_document(self):
         document_path = filedialog.askopenfilename(title="Select Photoshop Document", filetypes=[("psd files", "*.psd *.tif")])
         if document_path != "":
-            self.lblPhotoshopPath['text'] = document_path
-
-    def _select_sizes(self):
-        clothing_path = fr"sizes/{self.cmbSizes.get()}.json"
-        self.ps_filler._open_sizes(clothing_path)
-
-    def _set_text_settings(self):
-        self.ps_filler.text_settings = self.cmbTextSettings.get()
+            self.lblDocumentPath['text'] = document_path
 
     def _start(self):
-        if self.lblPhotoshopPath['text'] == "":
+        if self.lblDocumentPath['text'] == "":
             self.master._mbox_error("Please select a photoshop document")
-        elif self.lblCsvPath['text'] == "":
+        elif self.lblDataTablePath['text'] == "":
             self.master._mbox_error("Please select a csv file")
         elif Config.get_sc_resize_image() == True and self.cmbSizes.get() == "Select Size":
             self.master._mbox_error("Please select a size")
         else:
-            self._select_sizes()
-            self._set_text_settings()
             self.progressBar.stop()
-            self._populate_txtResult()
+            self._refresh_text_box()
+            text_setting = Helper.get_textsetting(self.cmbTextSettings.get())
+
+            sizes = fr"sizes/{self.cmbSizes.get()}.json"
+            document = self.lblDocumentPath['text']
+            data_table = self.lblDataTablePath['text']
             self._txt_append_text(self.txtResult, "Running script...")
-            start_time = time.time()
 
-            log = self.ps_filler.start(convert_cmyk=self.isCMYK.get())
+            start_time = time.perf_counter()
 
-            self._txt_append_text(self.txtResult, f"Execution time: {time.time()-start_time:0.2f} seconds\n")
+            self.photomatic.initialize_components(document, data_table, sizes, text_setting)
+            log = self.photomatic.start(convert_cmyk=self.isCMYK.get())
+
+            self._txt_append_text(self.txtResult, f"Execution time: {time.perf_counter()-start_time:0.2f} seconds\n")
             self.progressBar['value'] = 100
 
             self._txt_append_text(self.txtResult, "Remarks:")
