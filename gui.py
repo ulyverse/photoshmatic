@@ -173,7 +173,7 @@ class MainSublimationAppFrame(tk.Frame):
             self._txt_append_text(self.txtResult, "Running script...")
             start_time = time.time()
 
-            log = self.ps_filler.start(convertCMYK=self.isCMYK.get())
+            log = self.ps_filler.start(convert_cmyk=self.isCMYK.get())
 
             self._txt_append_text(self.txtResult, f"Execution time: {time.time()-start_time:0.2f} seconds\n")
             self.progressBar['value'] = 100
@@ -194,11 +194,11 @@ class MainSublimationAppFrame(tk.Frame):
 
     def _init_widgets(self):
         #1
-        self.btnPhotoshop = tk.Button(self, text="Select Photoshop", command=self._select_psd, font=self._font_style, cursor="hand2")
+        self.btnPhotoshop = tk.Button(self, text="Select Photoshop", command=self._select_document, font=self._font_style, cursor="hand2")
         self.lblPhotoshopPath = tk.Label(self, font=self._font_style)
 
         #2
-        self.btnCsv = tk.Button(self, text="Select Csv", command=self._select_csv, font=self._font_style, cursor="hand2")
+        self.btnCsv = tk.Button(self, text="Select Csv", command=self._select_datatable, font=self._font_style, cursor="hand2")
         self.lblCsvPath = tk.Label(self, font=self._font_style)
 
         #3
@@ -265,22 +265,19 @@ class MainSublimationAppFrame(tk.Frame):
         #5
         self.txtResult.grid(row=5, column=0, columnspan=3, sticky="NEWS", pady=(0,20))
 
-    def _select_psd(self):
-        psd_path = filedialog.askopenfilename(title="Select Photoshop Document", filetypes=[("psd files", "*.psd *.tif")])
-        if psd_path != "":
-            self.lblPhotoshopPath['text'] = psd_path
-            self.ps_filler.set_photoshop_path(psd_path)
+    def _select_document(self):
+        document_path = filedialog.askopenfilename(title="Select Photoshop Document", filetypes=[("psd files", "*.psd *.tif")])
+        if document_path != "":
+            self.lblPhotoshopPath['text'] = document_path
 
-    def _select_csv(self):
-        csv_path = filedialog.askopenfilename(title="Select CSV File", filetypes=[("csv files", "*.csv")])
-
-        if csv_path != "":
-            self.lblCsvPath['text'] = csv_path
-            self.ps_filler.set_csv_path(csv_path)
+    def _select_datatable(self):
+        datatable_path = filedialog.askopenfilename(title="Select CSV File", filetypes=[("csv files", "*.csv")])
+        if datatable_path != "":
+            self.lblCsvPath['text'] = datatable_path
 
     def _select_sizes(self):
-        json_path = fr"sizes/{self.cmbSizes.get()}.json"
-        self.ps_filler.init_sizes(json_path)
+        clothing_path = fr"sizes/{self.cmbSizes.get()}.json"
+        self.ps_filler._open_sizes(clothing_path)
 
     def _set_text_settings(self):
         self.ps_filler.text_settings = self.cmbTextSettings.get()

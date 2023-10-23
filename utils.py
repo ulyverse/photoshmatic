@@ -24,9 +24,9 @@ class PhotomaticPro:
         return " "
     
     def __init__(self) -> None:
-        self.text_settings = None
-        self.data = None
-        self.clothing = None
+        self._data = None
+        self._clothing = None
+        self._app = None
 
     def start(
             self, 
@@ -49,9 +49,9 @@ class PhotomaticPro:
         error = self._check_parameter_error()
         if error != None: log += f"Parameter invalid in these layers: {error}\n"
 
-        self._copy_document()
+        self._create_placeholder()
 
-        for row in self.data.iterate_rows():
+        for row in self._data.iterate_rows():
             #save state
             savedState = self._app.activeDocument.activeHistoryState
 
@@ -62,10 +62,10 @@ class PhotomaticPro:
             for col, cell in row[1].items():
                 self._fill_layers(col, cell)
 
-            if Config.get_sc_resize_image() == True and self.data.does_column_exist('size'):
-                size = self.data.at(row_idx, 'size')
-                if not self.data.is_empty(size):
-                    shortsize = self.clothing.get_shortsize(size)
+            if Config.get_sc_resize_image() == True and self._data.does_column_exist('size'):
+                size = self._data.at(row_idx, 'size')
+                if not self._data.is_empty(size):
+                    shortsize = self._clothing.get_shortsize(size)
                     if shortsize != None:
                         self._fill_layers("shortsize", shortsize)
 
@@ -90,11 +90,11 @@ class PhotomaticPro:
         if text_setting == TextSettings.DEFAULT:
             return
         elif text_setting == TextSettings.UPPERCASE:
-            self.data.transform(lambda s: s.upper() if type(s) == str else s)
+            self._data.transform(lambda s: s.upper() if type(s) == str else s)
         elif text_setting == TextSettings.LOWERCASE:
-            self.data.transform(lambda s: s.lower() if type(s) == str else s)
+            self._data.transform(lambda s: s.lower() if type(s) == str else s)
         elif text_setting == TextSettings.CAPITALIZE:
-            self.data.transform(lambda s: s.capitalize() if type(s) == str else s)
+            self._data.transform(lambda s: s.capitalize() if type(s) == str else s)
     
     def _create_folderpath(self) -> str:
         psd_name = self._app.activeDocument.name
@@ -108,7 +108,7 @@ class PhotomaticPro:
     def _create_outputfolder(self, folder_path):
         Path(folder_path).mkdir(exist_ok=True)
 
-    def _copy_document(self):
+    def _create_placeholder(self):
         psd_name = self._app.activeDocument.name
         self._app.activeDocument.duplicate(f"{psd_name} - placeholder")
 
@@ -120,7 +120,7 @@ class PhotomaticPro:
 
     def _change_doc_size(self, size_name) -> bool:
         size_found = False
-        size = self.clothing.get_size(size_name)
+        size = self._clothing.get_size(size_name)
         if(size != None):
             self._app.activeDocument.resizeImage(size.width, size.height, self._app.activeDocument.resolution)
             size_found = True
@@ -193,18 +193,18 @@ class PhotomaticPro:
             return
 
         self.clothing_name = file_path[6:-5]
-        self.clothing = ClothSizes(ClothSizes.read_clothing(file_path))
+        self._clothing = ClothSizes(ClothSizes.read_clothing(file_path))
         
     def _open_datatable(self, datatable_path):
-        self.data = PandasDataTable(datatable_path, encoding=Config.get_character_encoding())
+        self._data = PandasDataTable(datatable_path, encoding=Config.get_character_encoding())
         if Config.get_sc_resize_image() == False:
             condition = Helper.get_size_condition(self._app.activeDocument.name)#side effect if activedocument isn't the right one
-            self.data.filter_isin('size',condition)
+            self._data.filter_isin('size',condition)
 
     def _create_fileformat(self, row):
         file_info = []
         for ecol in self._get_existing_filenamecol():
-            ecol_value = self.data.at(row,ecol)
+            ecol_value = self._data.at(row,ecol)
             if Helper.is_not_empty(ecol_value):
                 file_info.append(ecol_value)
 
@@ -224,16 +224,16 @@ class PhotomaticPro:
         required_col = ['name','size',Config.get_np_number_preference()]
         existing_col = []
         for rcol in required_col:
-            for ecol in self.data.columns:
+            for ecol in self._data.columns:
                 if rcol in ecol.lower():
                     existing_col.append(ecol)
         return existing_col
 
     def print_sizes(self):
-        self.clothing.print()
+        self._clothing.print()
 
     def print_df(self):
-        self.data.print()
+        self._data.print()
 
 
 class Helper:
