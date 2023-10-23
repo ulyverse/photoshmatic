@@ -15,14 +15,6 @@ class Helper:
         return " "
 
     #PURE HELPER
-    def try_parse(digit:str) -> float | None:
-        try:
-            num = float(digit)
-            return num
-        except:
-            return None
-        
-    #PURE HELPER
     @classmethod
     def compare_insensitive(cls, str1:str, str2:str) -> bool:
         '''
@@ -31,22 +23,7 @@ class Helper:
             returns True if strings are the same otherwise False
         '''
         return  str1.lower() == str2.lower()
-
-    #GUI CMB PHOTOMATIC
-    def get_textsettings():
-        txtset = list()
-        for text_setting in TextSettings:
-            txtset.append(text_setting.value)
-        return txtset
-
-    #SETUP HELPER
-    def get_uniq_identifier():
-        return hashlib.md5((Helper.get_mad()+"hehexd").encode("utf-8")).hexdigest()
     
-    #SETUP HELPER
-    def get_mad():
-        return ':'.join(("%012X" % uuid.getnode())[i:i+2] for i in range(0, 12, 2))
-
     #PHOTOMATIC HELPER
     @classmethod
     def extract_size_in_file(cls, document_name:str) -> str | list | None:
@@ -71,6 +48,18 @@ class Helper:
                     if cls.compare_insensitive(size,file):
                         return size
         return None
+
+    #PURE HELPER
+    def try_parse(digit:str) -> float | None:
+        try:
+            num = float(digit)
+            return num
+        except:
+            return None
+        
+    #SETUP HELPER
+    def get_mac_address():
+        return ':'.join(("%012X" % uuid.getnode())[i:i+2] for i in range(0, 12, 2))
     
     #PHOTOMATIC HELPER
     @classmethod
@@ -98,3 +87,14 @@ class Helper:
             return condition
         
         return [size_name, size_name.lower(), size_name.upper(), size_name.capitalize()]
+
+    #GUI CMB PHOTOMATIC
+    def get_textsettings():
+        txtset = list()
+        for text_setting in TextSettings:
+            txtset.append(text_setting.value)
+        return txtset
+
+    #SETUP HELPER
+    def get_uniq_identifier():
+        return hashlib.md5((Helper.get_mac_address()+"hehexd").encode("utf-8")).hexdigest()

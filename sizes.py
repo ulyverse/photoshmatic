@@ -1,4 +1,9 @@
+#dependency modules
 import json
+
+#custom modules
+from utils import Helper
+
 
 def __dir__():
     return " "
@@ -43,9 +48,8 @@ class ClothSizes:
             return size.short_size
         
     def get_size(self, size_name:str):
-        #use the helper compare later if importing issue get ssolved
         for size in self.sizes:
-            if size.name.lower() == size_name.lower():
+            if Helper.compare_insensitive(size, size_name):
                 return size
         return None
     

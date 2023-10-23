@@ -1,9 +1,10 @@
-#built-int modules
+#dependency modules
 from tkinter import messagebox
 
 #custom modules
 from configuration import Config
 from gui import WindowFrameManager
+
 
 def __dir__():
     return " "

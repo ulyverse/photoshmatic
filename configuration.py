@@ -1,4 +1,9 @@
+#dependency modules
 import json    
+
+
+def __dir__():
+    return " "
 
 class Config:
     data = None

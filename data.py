@@ -1,5 +1,10 @@
+#dependency modules
 import pandas as pd
 from pandas.errors import EmptyDataError
+
+
+def __dir__():
+    return " "
 
 class PandasDataTable():
     def __init__(self, path, encoding):

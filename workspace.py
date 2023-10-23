@@ -1,7 +1,14 @@
+#dependency modules
 import photoshop.api as ps
+
+#custom modules
 from enumeration import UnitPreference
 from enumeration import Dimension
 from utils import Helper
+
+
+def __dir__():
+    return " "
 
 class PhotoshopWorkspace():
     def __dir__():

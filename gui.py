@@ -1,11 +1,9 @@
 #dependency modules
-from requests.exceptions import ConnectionError
-
-#built-in modules
 import os
 import time
 import tkinter as tk
 import tkinter.ttk as ttk
+from requests.exceptions import ConnectionError
 from tkinter import BooleanVar
 from tkinter import filedialog
 from tkinter import messagebox
@@ -34,14 +32,6 @@ class WindowFrameManager(tk.Tk):
         self.grid_columnconfigure(0, weight=1)
         self._frame = None
 
-    def switch_frame(self, frame_class, *argv):
-        if self._frame is not None:
-            self._frame.destroy()
-
-        self._font_style = ('Arial', 12)
-        self._frame = frame_class(self, self._font_style, *argv)
-        self._frame.grid(row=0, column=0, sticky="NS")
-
     def _is_verified(self):
         try:
             if not setup.validate_version():
@@ -60,6 +50,9 @@ class WindowFrameManager(tk.Tk):
             self._mbox_error(repr(e))
 
         return False
+    
+    def _mbox_error(self,message:str, title:str = None):
+        messagebox.showerror(title if title != None else "Error", message)
         
     def run(self):
         result = self._is_verified()
@@ -69,8 +62,13 @@ class WindowFrameManager(tk.Tk):
             self.switch_frame(WelcomeFrame)
         self.mainloop()
 
-    def _mbox_error(self,message:str, title:str = None):
-        messagebox.showerror(title if title != None else "Error", message)
+    def switch_frame(self, frame_class, *argv):
+        if self._frame is not None:
+            self._frame.destroy()
+
+        self._font_style = ('Arial', 12)
+        self._frame = frame_class(self, self._font_style, *argv)
+        self._frame.grid(row=0, column=0, sticky="NS")
 
 
 class WelcomeFrame(tk.Frame):
@@ -158,36 +156,6 @@ class MainSublimationAppFrame(tk.Frame):
         self._init_widgets()
         self.ps_filler = PhotomaticPro()
 
-    def _start(self):
-        if self.lblPhotoshopPath['text'] == "":
-            self.master._mbox_error("Please select a photoshop document")
-        elif self.lblCsvPath['text'] == "":
-            self.master._mbox_error("Please select a csv file")
-        elif Config.get_sc_resize_image() == True and self.cmbSizes.get() == "Select Size":
-            self.master._mbox_error("Please select a size")
-        else:
-            self._select_sizes()
-            self._set_text_settings()
-            self.progressBar.stop()
-            self._populate_txtResult()
-            self._txt_append_text(self.txtResult, "Running script...")
-            start_time = time.time()
-
-            log = self.ps_filler.start(convert_cmyk=self.isCMYK.get())
-
-            self._txt_append_text(self.txtResult, f"Execution time: {time.time()-start_time:0.2f} seconds\n")
-            self.progressBar['value'] = 100
-
-            self._txt_append_text(self.txtResult, "Remarks:")
-
-            if log != "":
-                self._txt_append_text(self.txtResult, log)
-
-            messagebox.showinfo("Success", "Done")
-
-    def update_progress_bar(self, progress):
-        self.progressBar['value'] = progress
-
     def _expire(self):
         messagebox.showinfo("Photomatic", "Your trial has expired")
         self.master.switch_frame(WelcomeFrame)
@@ -230,6 +198,20 @@ class MainSublimationAppFrame(tk.Frame):
 
         self._put_widgets()
 
+    def _populate_cmbSizes(self):
+        sizes = ['Select Size']
+        for size in os.listdir("sizes/"):
+            sizes.append(size[:-5])
+        self.cmbSizes['values'] = sizes
+        self.cmbSizes.current(0)
+
+    def _populate_txtResult(self):
+        self._txt_refresh_text(self.txtResult)
+        self._txt_append_text(self.txtResult, "REMINDERS:")
+        self._txt_append_text(self.txtResult, " - Don't click anything inside photoshop while the script is running")
+        self._txt_append_text(self.txtResult, " - Layers that you want to be changed by the csv should NOT be inside a group folder")
+        self._txt_append_text(self.txtResult, " - Text transform doesn't always apply! e.g. when the layer has been set to \"All Caps\"")
+
     def _put_widgets(self):
         #0 this is hacky fix later
         self._hacky_frame = tk.Frame(self)
@@ -265,15 +247,15 @@ class MainSublimationAppFrame(tk.Frame):
         #5
         self.txtResult.grid(row=5, column=0, columnspan=3, sticky="NEWS", pady=(0,20))
 
-    def _select_document(self):
-        document_path = filedialog.askopenfilename(title="Select Photoshop Document", filetypes=[("psd files", "*.psd *.tif")])
-        if document_path != "":
-            self.lblPhotoshopPath['text'] = document_path
-
     def _select_datatable(self):
         datatable_path = filedialog.askopenfilename(title="Select CSV File", filetypes=[("csv files", "*.csv")])
         if datatable_path != "":
             self.lblCsvPath['text'] = datatable_path
+
+    def _select_document(self):
+        document_path = filedialog.askopenfilename(title="Select Photoshop Document", filetypes=[("psd files", "*.psd *.tif")])
+        if document_path != "":
+            self.lblPhotoshopPath['text'] = document_path
 
     def _select_sizes(self):
         clothing_path = fr"sizes/{self.cmbSizes.get()}.json"
@@ -282,26 +264,42 @@ class MainSublimationAppFrame(tk.Frame):
     def _set_text_settings(self):
         self.ps_filler.text_settings = self.cmbTextSettings.get()
 
-    def _populate_cmbSizes(self):
-        sizes = ['Select Size']
-        for size in os.listdir("sizes/"):
-            sizes.append(size[:-5])
-        self.cmbSizes['values'] = sizes
-        self.cmbSizes.current(0)
+    def _start(self):
+        if self.lblPhotoshopPath['text'] == "":
+            self.master._mbox_error("Please select a photoshop document")
+        elif self.lblCsvPath['text'] == "":
+            self.master._mbox_error("Please select a csv file")
+        elif Config.get_sc_resize_image() == True and self.cmbSizes.get() == "Select Size":
+            self.master._mbox_error("Please select a size")
+        else:
+            self._select_sizes()
+            self._set_text_settings()
+            self.progressBar.stop()
+            self._populate_txtResult()
+            self._txt_append_text(self.txtResult, "Running script...")
+            start_time = time.time()
 
-    def _populate_txtResult(self):
-        self._txt_refresh_text(self.txtResult)
-        self._txt_append_text(self.txtResult, "REMINDERS:")
-        self._txt_append_text(self.txtResult, " - Don't click anything inside photoshop while the script is running")
-        self._txt_append_text(self.txtResult, " - Layers that you want to be changed by the csv should NOT be inside a group folder")
-        self._txt_append_text(self.txtResult, " - Text transform doesn't always apply! e.g. when the layer has been set to \"All Caps\"")
+            log = self.ps_filler.start(convert_cmyk=self.isCMYK.get())
+
+            self._txt_append_text(self.txtResult, f"Execution time: {time.time()-start_time:0.2f} seconds\n")
+            self.progressBar['value'] = 100
+
+            self._txt_append_text(self.txtResult, "Remarks:")
+
+            if log != "":
+                self._txt_append_text(self.txtResult, log)
+
+            messagebox.showinfo("Success", "Done")
+
+    def _txt_append_text(self, txt: tk.Text, content:str):
+        txt['state'] = "normal"
+        txt.insert(tk.END, f"{content}\n")
+        txt['state'] = "disabled"
 
     def _txt_refresh_text(self, txt:tk.Text):
         txt['state'] = "normal"
         txt.delete("1.0", tk.END)
         txt['state'] = "disabled"
 
-    def _txt_append_text(self, txt: tk.Text, content:str):
-        txt['state'] = "normal"
-        txt.insert(tk.END, f"{content}\n")
-        txt['state'] = "disabled"
+    def update_progress_bar(self, progress):
+        self.progressBar['value'] = progress
