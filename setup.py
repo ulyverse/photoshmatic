@@ -1,5 +1,7 @@
+#dependency modules
 import requests
 
+#custom modules
 from utils import Helper
 
 
@@ -24,13 +26,13 @@ def validate_registered_device():
         return response.json()
     else:
         return None
-
-def validate_version():
-    response = requests.post("https://lifecalendr.com/api/version", data={"version":"v1.0"})
+    
+def validate_trial_key(trialkey):
+    response = requests.post("https://lifecalendr.com/api/trialkey", data={"trialkey":trialkey})
 
     return response.status_code == 200 and response.json()['status']
 
-def validate_trial_key(trialkey):
-    response = requests.post("https://lifecalendr.com/api/trialkey", data={"trialkey":trialkey})
+def validate_version():
+    response = requests.post("https://lifecalendr.com/api/version", data={"version":"v1.0"})
 
     return response.status_code == 200 and response.json()['status']
