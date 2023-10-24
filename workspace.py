@@ -1,7 +1,7 @@
-#dependency modules
+# dependency modules
 import photoshop.api as ps
 
-#custom modules
+# custom modules
 from enumeration import UnitPreference
 from enumeration import Dimension
 from utils import Helper
@@ -10,11 +10,14 @@ from utils import Helper
 def __dir__():
     return " "
 
-class PhotoshopWorkspace():
-    def __dir__():
+
+class PhotoshopWorkspace:
+    def __dir__(self):
         return " "
 
-    def __init__(self, version=None, ruler_unit = UnitPreference.INCHES.value, image_quality=12):
+    def __init__(
+        self, version=None, ruler_unit=UnitPreference.INCHES.value, image_quality=12
+    ):
         self.application = ps.Application(version=version)
         self.set_unit_preference(ruler_unit)
         self.__jpg_save_preference = ps.JPEGSaveOptions(image_quality)
@@ -30,7 +33,7 @@ class PhotoshopWorkspace():
     @property
     def application(self):
         return self.__application
-    
+
     @application.setter
     def application(self, app: ps.Application):
         self.__application = app
@@ -42,15 +45,15 @@ class PhotoshopWorkspace():
     @property
     def document_name(self):
         return self.document.name
-    
+
     @property
     def document_fullname(self):
-        return self.document.fullName
-    
+        return str(self.document.fullName)
+
     @property
     def layers(self):
         return self.document.layers
-    
+
     @property
     def text_direction(self):
         return self.active_layer.textItem.direction
@@ -58,15 +61,15 @@ class PhotoshopWorkspace():
     @property
     def unit_preference(self):
         return self.application.preferences.rulerUnits
-    
-    #METHODS
+
+    # METHODS
     def apply_parameter(self, max_length):
         layer_dimension = self.get_active_layer_dimension()
         horizontal = self.is_active_layer_horizontal()
         orientation = Dimension.WIDTH if horizontal else Dimension.HEIGHT
 
         if self.exceed_max_length(layer_dimension[orientation], max_length):
-            ratio = max_length/layer_dimension[orientation]*100
+            ratio = max_length / layer_dimension[orientation] * 100
             if horizontal:
                 self.resize_layer(ratio, 100, ps.AnchorPosition.MiddleCenter)
             else:
@@ -83,22 +86,24 @@ class PhotoshopWorkspace():
     def create_document_placeholder(self):
         self.document.duplicate(f"{self.document_name} - placeholder")
 
-    def exceed_max_length(self, length, max):
-        return length > max
+    def exceed_max_length(self, length, max_length):
+        return length > max_length
 
-    def fill_layers(self, key:str, value:str):
+    def fill_layers(self, key: str, value: str):
         for layer in self.iterate_layers():
             layer_name = layer.name.split()
             if len(layer_name) > 0 and layer_name[0] == key:
                 layer.textItem.contents = value
-                
-                if len(layer_name) == 1: continue
 
-                max = self.get_max_length(layer_name[1])
-                if max is None: continue
+                if len(layer_name) == 1:
+                    continue
+
+                max_length = self.get_max_length(layer_name[1])
+                if max_length is None:
+                    continue
 
                 self.active_layer = layer
-                self.apply_parameter(max)
+                self.apply_parameter(max_length)
 
     def get_active_layer_dimension(self):
         dimension = {}
@@ -108,7 +113,11 @@ class PhotoshopWorkspace():
         return dimension
 
     def get_max_length(self, parameter):
-        return Helper.try_parse(parameter) if parameter[0].isdigit() else Helper.try_parse(parameter[2:])
+        return (
+            Helper.try_parse(parameter)
+            if parameter[0].isdigit()
+            else Helper.try_parse(parameter[2:])
+        )
 
     def get_ruler_unit(self, ruler_unit):
         rulerunit = None
@@ -118,9 +127,9 @@ class PhotoshopWorkspace():
             rulerunit = ps.Units.CM
         elif ruler_unit == UnitPreference.PIXELS.value:
             rulerunit = ps.Units.Pixels
-        
+
         return rulerunit
-    
+
     def is_active_layer_horizontal(self):
         return self.text_direction == ps.Direction.Horizontal
 

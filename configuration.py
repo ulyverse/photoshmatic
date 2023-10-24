@@ -1,9 +1,10 @@
-#dependency modules
-import json    
+# dependency modules
+import json
 
 
 def __dir__():
     return " "
+
 
 class Config:
     data = None
@@ -17,55 +18,59 @@ class Config:
             except json.decoder.JSONDecodeError as e:
                 raise Exception(repr(e))
             except FileNotFoundError:
-                raise Exception("settings/settings.json is missing")
-            
+                raise FileNotFoundError("settings/settings.json is missing")
+
     @classmethod
     def get_app_name(cls) -> str:
         if cls.data is None:
             cls.load_config()
-        data =  cls.data["app_name"]
+        data = cls.data["app_name"]
         return data if data != "" else "PHOTOMATIC"
-    
+
     @classmethod
     def get_jpg_quality(cls):
         if cls.data is None:
             cls.load_config()
         data = cls.data["jpg_quality"]
         return data if type(data) == int and data > 0 else 12
-    
+
     @classmethod
     def get_ps_version(cls):
         if cls.data is None:
             cls.load_config()
         return cls.data["ps_version"] if cls.data["ps_version"] != "" else None
-    
-    @classmethod    
+
+    @classmethod
     def get_character_encoding(cls):
         if cls.data is None:
             cls.load_config()
         return cls.data["char_encoding"] if cls.data["char_encoding"] != "" else "mbcs"
-    
-    @classmethod    
+
+    @classmethod
     def get_rulerunit_preference(cls):
         if cls.data is None:
             cls.load_config()
-        return cls.data["rulerunit_preference"] if cls.data["rulerunit_preference"] != "" else "in"
-    
-    @classmethod    
+        return (
+            cls.data["rulerunit_preference"]
+            if cls.data["rulerunit_preference"] != ""
+            else "in"
+        )
+
+    @classmethod
     def get_np_number_preference(cls):
         if cls.data is None:
             cls.load_config()
-        data = cls.data["naming_preference"]["number"] 
+        data = cls.data["naming_preference"]["number"]
         return data if data != "" else "number"
-    
-    @classmethod    
+
+    @classmethod
     def get_sc_resize_image(cls):
         if cls.data is None:
             cls.load_config()
         data = cls.data["size_config"]["resize_image"]
-        return data if data != None and type(data) == bool else True
-    
-    @classmethod    
+        return data if data is not None and isinstance(data, bool) else True
+
+    @classmethod
     def get_sc_sizes(cls):
         if cls.data is None:
             cls.load_config()
