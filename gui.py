@@ -1,4 +1,4 @@
-#dependency modules
+# dependency modules
 import os
 import time
 import tkinter as tk
@@ -9,26 +9,26 @@ from tkinter import filedialog
 from tkinter import messagebox
 from tkinter.simpledialog import askstring
 
-#custom module
+# custom module
 import setup
 from appcontroller import PhotomaticPro
 from configuration import Config
 from utils import Helper
 
 
-
 def __dir__():
     return " "
+
 
 class WindowFrameManager(tk.Tk):
     def __dir__():
         return " "
-    
+
     def __init__(self):
         tk.Tk.__init__(self)
         self.title("Photomatic")
-        self['pady'] = 10
-        self['padx'] = 30
+        self["pady"] = 10
+        self["padx"] = 30
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self._frame = None
@@ -36,25 +36,29 @@ class WindowFrameManager(tk.Tk):
     def _is_verified(self):
         try:
             if not setup.validate_version():
-                self._mbox_error("This version of the app isn't supported anymore, please update your app to the latest version.")
+                self._mbox_error(
+                    "This version of the app isn't supported anymore, please update your app to the latest version."
+                )
                 self.destroy()
                 return None
             is_valid_user = setup.validate_registered_device()
-            if is_valid_user['status'] == True:
-                if is_valid_user['is_expired'] == False:
+            if is_valid_user["status"] == True:
+                if is_valid_user["is_expired"] == False:
                     return True
                 else:
                     self._mbox_error("Your license key has expired")
         except ConnectionError as e:
-            self._mbox_error("Cannot access the server, please check your internet connection.")
+            self._mbox_error(
+                "Cannot access the server, please check your internet connection."
+            )
         except Exception as e:
             self._mbox_error(repr(e))
 
         return False
-    
-    def _mbox_error(self,message:str, title:str = None):
+
+    def _mbox_error(self, message: str, title: str = None):
         messagebox.showerror(title if title != None else "Error", message)
-        
+
     def run(self):
         result = self._is_verified()
         if result:
@@ -67,7 +71,7 @@ class WindowFrameManager(tk.Tk):
         if self._frame is not None:
             self._frame.destroy()
 
-        self._font_style = ('Arial', 12)
+        self._font_style = ("Arial", 12)
         self._frame = frame_class(self, self._font_style, *argv)
         self._frame.grid(row=0, column=0, sticky="NS")
 
@@ -75,46 +79,60 @@ class WindowFrameManager(tk.Tk):
 class WelcomeFrame(tk.Frame):
     def __dir__():
         return " "
-    
+
     def __init__(self, master, font):
         tk.Frame.__init__(self, master)
-        self.master.minsize(350,300)
+        self.master.minsize(350, 300)
         self._font_style = font
         self._init_widgets()
 
     def _init_widgets(self):
-        self._lblCompanyName = tk.Label(self, text="PHOTOMATIC", font=("Arial Bold Italic", 24))
-        self._lblCompanyName.grid(row=0, column=0, columnspan=2, pady=(0,50))
+        self._lblCompanyName = tk.Label(
+            self, text="PHOTOMATIC", font=("Arial Bold Italic", 24)
+        )
+        self._lblCompanyName.grid(row=0, column=0, columnspan=2, pady=(0, 50))
 
-        self._lblKeycode = tk.Label(self, text="(enter keycode here)", font=self._font_style)
-        self._lblKeycode.grid(row=1, column=0, pady=(0,1))
+        self._lblKeycode = tk.Label(
+            self, text="(enter keycode here)", font=self._font_style
+        )
+        self._lblKeycode.grid(row=1, column=0, pady=(0, 1))
 
-        self._txtKeycode = tk.Entry(self,width=29, font=("Consolas", 10))
+        self._txtKeycode = tk.Entry(self, width=29, font=("Consolas", 10))
         self._txtKeycode.grid(row=2, column=0)
 
-        self._btnKeycode = tk.Button(self, text="ENTER", command=self._login, font=self._font_style, cursor="hand2")
-        self._btnKeycode.grid(row=3, column=0, sticky="EW", pady=(20,40))
+        self._btnKeycode = tk.Button(
+            self,
+            text="ENTER",
+            command=self._login,
+            font=self._font_style,
+            cursor="hand2",
+        )
+        self._btnKeycode.grid(row=3, column=0, sticky="EW", pady=(20, 40))
 
-        self.lblTrialKeyCode = tk.Label(self, text="Enter trial key code", fg="blue", cursor="hand2")
-        self.lblTrialKeyCode.grid(row=4,column=0, sticky="EW")
-        self.lblTrialKeyCode.bind("<Button-1>", lambda e:self._trial())
+        self.lblTrialKeyCode = tk.Label(
+            self, text="Enter trial key code", fg="blue", cursor="hand2"
+        )
+        self.lblTrialKeyCode.grid(row=4, column=0, sticky="EW")
+        self.lblTrialKeyCode.bind("<Button-1>", lambda e: self._trial())
 
     def _login(self):
         key = self._txtKeycode.get()
         if key == "":
             return
-        
+
         try:
             if setup.enter_license_code(key):
                 self.master.switch_frame(MainSublimationAppFrame)
                 messagebox.showinfo("Photomatic", "Thank you for purchasing Photomatic")
             else:
                 messagebox.showinfo("Photomatic", "Incorrect Keycode, Please try again")
-        except (ConnectionError) as e:
-            self.master._mbox_error("Cannot access the server, please check your internet connection.")
+        except ConnectionError as e:
+            self.master._mbox_error(
+                "Cannot access the server, please check your internet connection."
+            )
         except Exception as e:
             self.master._mbox_error(repr(e))
-    
+
     def _trial(self):
         trial_key = askstring("T", "enter trial key code here")
 
@@ -126,7 +144,9 @@ class WelcomeFrame(tk.Frame):
             else:
                 messagebox.showinfo("Photomatic", "Incorrect Keycode, Please try again")
         except ConnectionError as e:
-            self._mbox_error("Cannot access the server, please check your internet connection.")
+            self._mbox_error(
+                "Cannot access the server, please check your internet connection."
+            )
         except Exception as e:
             self._mbox_error(repr(e))
 
@@ -139,9 +159,9 @@ class MainSublimationAppFrame(tk.Frame):
         tk.Frame.__init__(self, master, width=100)
 
         if is_trial:
-            self.master.after(1000*60*60, self._expire)
+            self.master.after(1000 * 60 * 60, self._expire)
 
-        self.master.minsize(817,400)
+        self.master.minsize(817, 400)
         self._font_style = font
 
         self.columnconfigure(0, weight=1)
@@ -153,7 +173,7 @@ class MainSublimationAppFrame(tk.Frame):
         self.rowconfigure(2, pad=15)
         self.rowconfigure(3)
         self.rowconfigure(4, pad=15)
-        self.rowconfigure(5, weight = 4)
+        self.rowconfigure(5, weight=4)
         self._init_widgets()
         self.photomatic = PhotomaticPro()
 
@@ -162,17 +182,31 @@ class MainSublimationAppFrame(tk.Frame):
         self.master.switch_frame(WelcomeFrame)
 
     def _init_widgets(self):
-        #1
-        self.btnPhotoshop = tk.Button(self, text="Select Photoshop", command=self._select_document, font=self._font_style, cursor="hand2")
+        # 1
+        self.btnPhotoshop = tk.Button(
+            self,
+            text="Select Photoshop",
+            command=self._select_document,
+            font=self._font_style,
+            cursor="hand2",
+        )
         self.lblDocumentPath = tk.Label(self, font=self._font_style)
 
-        #2
-        self.btnCsv = tk.Button(self, text="Select Csv", command=self._select_datatable, font=self._font_style, cursor="hand2")
+        # 2
+        self.btnCsv = tk.Button(
+            self,
+            text="Select Csv",
+            command=self._select_datatable,
+            font=self._font_style,
+            cursor="hand2",
+        )
         self.lblDataTablePath = tk.Label(self, font=self._font_style)
 
-        #3
+        # 3
         self.cmbSizes = ttk.Combobox(self, font=self._font_style)
-        self.cmbSizes.state(["readonly"] if Config.get_sc_resize_image() == True else ["disabled"])
+        self.cmbSizes.state(
+            ["readonly"] if Config.get_sc_resize_image() == True else ["disabled"]
+        )
         self._populate_cmbSizes()
 
         self.grpTextSettings = tk.Frame(self)
@@ -181,107 +215,145 @@ class MainSublimationAppFrame(tk.Frame):
 
         self.cmbTextSettings = ttk.Combobox(self.grpTextSettings, width=10)
         self.cmbTextSettings.state(["readonly"])
-        self.cmbTextSettings['values'] = Helper.get_textsettings()
+        self.cmbTextSettings["values"] = Helper.get_textsettings()
         self.cmbTextSettings.current(0)
-        
-        self.isCMYK = BooleanVar()
-        self.checkCMYK = ttk.Checkbutton(self.grpTextSettings, text="Convert image to cmyk", variable=self.isCMYK, onvalue=True, offvalue=False)
-        
-        self.btnStart = tk.Button(self, text="START", command=self._start, font=self._font_style, width=15, cursor="hand2")
 
-        #4
+        self.isCMYK = BooleanVar()
+        self.checkCMYK = ttk.Checkbutton(
+            self.grpTextSettings,
+            text="Convert image to cmyk",
+            variable=self.isCMYK,
+            onvalue=True,
+            offvalue=False,
+        )
+
+        self.btnStart = tk.Button(
+            self,
+            text="START",
+            command=self._start,
+            font=self._font_style,
+            width=15,
+            cursor="hand2",
+        )
+
+        # 4
         self.progressBar = ttk.Progressbar(self)
 
-        #5
+        # 5
         self.txtResult = tk.Text(self, width=100, height=10)
-        self.txtResult['state'] = "disabled"
+        self.txtResult["state"] = "disabled"
         self._refresh_text_box()
 
         self._put_widgets()
 
     def _populate_cmbSizes(self):
-        sizes = ['Select Size']
+        sizes = ["Select Size"]
         for size in os.listdir("sizes/"):
             sizes.append(size[:-5])
-        self.cmbSizes['values'] = sizes
+        self.cmbSizes["values"] = sizes
         self.cmbSizes.current(0)
 
     def _refresh_text_box(self):
         self._txt_refresh_text(self.txtResult)
         self._txt_append_text(self.txtResult, "REMINDERS:")
-        self._txt_append_text(self.txtResult, " - Don't click anything inside photoshop while the script is running")
-        self._txt_append_text(self.txtResult, " - Layers that you want to be changed by the csv should NOT be inside a group folder")
-        self._txt_append_text(self.txtResult, " - Text transform doesn't always apply! e.g. when the layer has been set to \"All Caps\"")
+        self._txt_append_text(
+            self.txtResult,
+            " - Don't click anything inside photoshop while the script is running",
+        )
+        self._txt_append_text(
+            self.txtResult,
+            " - Layers that you want to be changed by the csv should NOT be inside a group folder",
+        )
+        self._txt_append_text(
+            self.txtResult,
+            ' - Text transform doesn\'t always apply! e.g. when the layer has been set to "All Caps"',
+        )
 
     def _put_widgets(self):
-        #0 this is hacky fix later
+        # 0 this is hacky fix later
         self._hacky_frame = tk.Frame(self)
-        self._hacky_frame.grid(row=0, column=0, sticky="WE", pady=(0,25), columnspan=3)
+        self._hacky_frame.grid(row=0, column=0, sticky="WE", pady=(0, 25), columnspan=3)
 
-        self._lblCompanyName = tk.Label(self._hacky_frame, text=Config.get_app_name(), font=("Arial Bold Italic", 24))
+        self._lblCompanyName = tk.Label(
+            self._hacky_frame,
+            text=Config.get_app_name(),
+            font=("Arial Bold Italic", 24),
+        )
         self._lblCompanyName.grid(row=0, column=0, sticky="E")
         self._separator = ttk.Separator(self._hacky_frame, orient="horizontal")
         self._separator.grid(row=1, column=0, ipadx=400)
 
-        #1
-        self.btnPhotoshop.grid(row=1, column=0, sticky="WE", padx=(0,30))
+        # 1
+        self.btnPhotoshop.grid(row=1, column=0, sticky="WE", padx=(0, 30))
         self.lblDocumentPath.grid(row=1, column=1, sticky="W", columnspan=2)
 
-        #2
-        self.btnCsv.grid(row=2, column=0, sticky="WE", padx=(0,30))
+        # 2
+        self.btnCsv.grid(row=2, column=0, sticky="WE", padx=(0, 30))
         self.lblDataTablePath.grid(row=2, column=1, sticky="W", columnspan=2)
 
-        #3
-        self.cmbSizes.grid(row=3, column=0, sticky="WE", padx=(0,30))
+        # 3
+        self.cmbSizes.grid(row=3, column=0, sticky="WE", padx=(0, 30))
 
-        #grpTextSettings
+        # grpTextSettings
         self.grpTextSettings.grid(row=3, column=1, sticky="WE", padx=(0, 30))
         self.lblTextSettings.pack(side="left")
-        self.cmbTextSettings.pack(side="left", padx=(0,30))
+        self.cmbTextSettings.pack(side="left", padx=(0, 30))
         self.checkCMYK.pack(side="left")
 
         self.btnStart.grid(row=3, column=2, sticky="WE")
 
-        #4
-        self.progressBar.grid(row=4, column=0, columnspan=3, sticky="WE", pady=(20,0))
+        # 4
+        self.progressBar.grid(row=4, column=0, columnspan=3, sticky="WE", pady=(20, 0))
 
-        #5
-        self.txtResult.grid(row=5, column=0, columnspan=3, sticky="NEWS", pady=(0,20))
+        # 5
+        self.txtResult.grid(row=5, column=0, columnspan=3, sticky="NEWS", pady=(0, 20))
 
     def _select_datatable(self):
-        datatable_path = filedialog.askopenfilename(title="Select CSV File", filetypes=[("csv files", "*.csv")])
+        datatable_path = filedialog.askopenfilename(
+            title="Select CSV File", filetypes=[("csv files", "*.csv")]
+        )
         if datatable_path != "":
-            self.lblDataTablePath['text'] = datatable_path
+            self.lblDataTablePath["text"] = datatable_path
 
     def _select_document(self):
-        document_path = filedialog.askopenfilename(title="Select Photoshop Document", filetypes=[("psd files", "*.psd *.tif")])
+        document_path = filedialog.askopenfilename(
+            title="Select Photoshop Document", filetypes=[("psd files", "*.psd *.tif")]
+        )
         if document_path != "":
-            self.lblDocumentPath['text'] = document_path
+            self.lblDocumentPath["text"] = document_path
 
     def _start(self):
-        if self.lblDocumentPath['text'] == "":
+        if self.lblDocumentPath["text"] == "":
             self.master._mbox_error("Please select a photoshop document")
-        elif self.lblDataTablePath['text'] == "":
+        elif self.lblDataTablePath["text"] == "":
             self.master._mbox_error("Please select a csv file")
-        elif Config.get_sc_resize_image() == True and self.cmbSizes.get() == "Select Size":
+        elif (
+            Config.get_sc_resize_image() == True
+            and self.cmbSizes.get() == "Select Size"
+        ):
             self.master._mbox_error("Please select a size")
         else:
             self.progressBar.stop()
             self._refresh_text_box()
             text_setting = Helper.get_textsetting(self.cmbTextSettings.get())
 
-            sizes = fr"sizes/{self.cmbSizes.get()}.json"
-            document = self.lblDocumentPath['text']
-            data_table = self.lblDataTablePath['text']
+            sizes = rf"sizes/{self.cmbSizes.get()}.json"
+            document = self.lblDocumentPath["text"]
+            data_table = self.lblDataTablePath["text"]
             self._txt_append_text(self.txtResult, "Running script...")
 
             start_time = time.perf_counter()
 
-            self.photomatic.initialize_components(document, data_table, sizes, text_setting)
+            self.photomatic.initialize_components(
+                document, data_table, sizes, text_setting
+            )
             log = self.photomatic.start(convert_cmyk=self.isCMYK.get())
 
-            self._txt_append_text(self.txtResult, f"Execution time: {time.perf_counter()-start_time:0.2f} seconds\n")
-            self.progressBar['value'] = 100
+            self._txt_append_text(
+                self.txtResult,
+                f"Execution time: {time.perf_counter()-start_time:0.2f} seconds\n",
+            )
+            self.progressBar["value"] = 100
 
             self._txt_append_text(self.txtResult, "Remarks:")
 
@@ -290,15 +362,15 @@ class MainSublimationAppFrame(tk.Frame):
 
             messagebox.showinfo("Success", "Done")
 
-    def _txt_append_text(self, txt: tk.Text, content:str):
-        txt['state'] = "normal"
+    def _txt_append_text(self, txt: tk.Text, content: str):
+        txt["state"] = "normal"
         txt.insert(tk.END, f"{content}\n")
-        txt['state'] = "disabled"
+        txt["state"] = "disabled"
 
-    def _txt_refresh_text(self, txt:tk.Text):
-        txt['state'] = "normal"
+    def _txt_refresh_text(self, txt: tk.Text):
+        txt["state"] = "normal"
         txt.delete("1.0", tk.END)
-        txt['state'] = "disabled"
+        txt["state"] = "disabled"
 
     def update_progress_bar(self, progress):
-        self.progressBar['value'] = progress
+        self.progressBar["value"] = progress
