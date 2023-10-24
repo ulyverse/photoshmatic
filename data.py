@@ -57,9 +57,9 @@ class PandasDataTable:
             self.__dataframe = pd.read_csv(path, encoding=encoding, dtype=str)
             self.__dataframe.columns = self.columns.str.lower()
             self.__dataframe.fillna("", inplace=True)
-        except EmptyDataError:
+        except EmptyDataError as e:
             raise EmptyDataError("The file is empty.")
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             raise Exception("The file does not exist.")
 
     def transform(self, option):

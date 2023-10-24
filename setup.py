@@ -20,6 +20,7 @@ def validate_license_key(key):
     response = requests.post(
         "https://lifecalendr.com/api/register",
         data={"licensekey": key, "id": Helper.get_uniq_identifier()},
+        timeout=60,
     )
 
     return response.status_code == 200 and response.json()["status"]
@@ -29,6 +30,7 @@ def validate_registered_device():
     response = requests.post(
         "https://lifecalendr.com/api/registered",
         data={"id": Helper.get_uniq_identifier()},
+        timeout=60,
     )
 
     if response.status_code == 200:
@@ -39,7 +41,7 @@ def validate_registered_device():
 
 def validate_trial_key(trialkey):
     response = requests.post(
-        "https://lifecalendr.com/api/trialkey", data={"trialkey": trialkey}
+        "https://lifecalendr.com/api/trialkey", data={"trialkey": trialkey}, timeout=60
     )
 
     return response.status_code == 200 and response.json()["status"]
@@ -47,7 +49,7 @@ def validate_trial_key(trialkey):
 
 def validate_version():
     response = requests.post(
-        "https://lifecalendr.com/api/version", data={"version": "v1.0"}
+        "https://lifecalendr.com/api/version", data={"version": "v1.0"}, timeout=60
     )
 
     return response.status_code == 200 and response.json()["status"]

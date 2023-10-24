@@ -56,7 +56,7 @@ class Helper:
         try:
             num = float(digit)
             return num
-        except Exception:
+        except ValueError:
             return None
 
     # SETUP HELPER
@@ -102,7 +102,7 @@ class Helper:
         elif settings == TextSettings.CAPITALIZE.value:
             return TextSettings.CAPITALIZE
         else:
-            return None
+            return TextSettings.DEFAULT
 
     # GUI CMB PHOTOMATIC
     @classmethod

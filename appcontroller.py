@@ -88,7 +88,7 @@ class PhotomaticPro:
         )
 
         if Config.get_sc_resize_image() is True:
-            folder_path += f" - {self._clothing.name}"
+            folder_path += f" - {self._clothing.name}"  # type: ignore
 
         return folder_path
 
@@ -113,7 +113,7 @@ class PhotomaticPro:
         workspace_path: str,
         datatable_path: str,
         clothing_path: str,
-        text_settings=TextSettings.DEFAULT,
+        text_settings: TextSettings = TextSettings.DEFAULT,
     ):
         self._open_workspace(workspace_path)
         self._open_sizes(clothing_path)
@@ -188,17 +188,17 @@ class PhotomaticPro:
             row_idx = row[0]
             # row_num should be based on either row_idx + 1 or if Index column exist
             # get that current existing Index.
-            row_num = row_idx + 1
+            row_num = row_idx + 1  # type: ignore
 
             for col, cell in row[1].items():
-                self._app.fill_layers(col, cell)
+                self._app.fill_layers(col, cell)  # type: ignore
 
             if Config.get_sc_resize_image() is True and self._data.does_column_exist(
                 "size"
             ):
                 size = self._data.at(row_idx, "size")
                 if not self._data.is_empty(size):
-                    shortsize = self._clothing.get_shortsize(size)
+                    shortsize = self._clothing.get_shortsize(size)  # type: ignore
                     if shortsize is not None:
                         self._app.fill_layers("shortsize", shortsize)
 
