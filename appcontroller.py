@@ -19,11 +19,16 @@ class PhotomaticPro:
         return " "
 
     def __init__(self) -> None:
-        self._data = None
-        self._clothing = None
         self._app = None
+        self._clothing = None
+        self._data = None
 
     def _change_doc_size(self, size_name) -> bool:
+        if self._app is None:
+            raise TypeError("App is None")
+        if self._clothing is None:
+            raise TypeError("Clothing is None")
+
         size_found = False
         size = self._clothing.get_size(size_name)
         if size is not None:
@@ -32,6 +37,9 @@ class PhotomaticPro:
         return size_found
 
     def _check_parameter_error(self):
+        if self._app is None:
+            raise TypeError("App is None")
+
         error = set()
         for layer in self._app.iterate_layers():
             layer_name = layer.name.split()
@@ -40,7 +48,7 @@ class PhotomaticPro:
                 continue
 
             is_param_error = (
-                True if self._app.get_max_length(layer_name[1]) == None else False
+                True if self._app.get_max_length(layer_name[1]) is None else False
             )
             if is_param_error and layer.name not in error:
                 error.add(layer.name)
@@ -50,6 +58,9 @@ class PhotomaticPro:
 
     def _create_fileformat(self, row):
         # OPTIMIZE THIS, IT UNEFFICIENTLY CALLING OVER AND OVER AGAIN...
+        if self._data is None:
+            raise TypeError("Data is none")
+
         file_info = []
         for ecol in self._get_existing_filenamecol():
             ecol_value = self._data.at(row, ecol)
@@ -68,13 +79,16 @@ class PhotomaticPro:
         return path
 
     def _create_folderpath(self) -> str:
+        if self._app is None:
+            raise TypeError("App is None")
+
         psd_name = self._app.document_name
         folder_path = (
             rf"{str(Path(self._app.document_fullname).parent)}\{psd_name[:-4]}"
         )
 
-        if Config.get_sc_resize_image() == True:
-            folder_path += f" - {self.clothing_name}"
+        if Config.get_sc_resize_image() is True:
+            folder_path += f" - {self._clothing.name}"
 
         return folder_path
 
@@ -83,6 +97,9 @@ class PhotomaticPro:
 
     def _get_existing_filenamecol(self):
         # THIS CAN BE CACHED?
+        if self._data is None:
+            raise TypeError("Data is none")
+
         required_col = ["name", "size", Config.get_np_number_preference()]
         existing_col = []
         for rcol in required_col:
@@ -104,30 +121,38 @@ class PhotomaticPro:
         self._transform_datatable(text_settings)
 
     def print_df(self):
+        if self._data is None:
+            raise TypeError("Data is None")
         self._data.print()
 
     def print_layers(self):
+        if self._app is None:
+            raise TypeError("App is None")
         self._app.print()
 
     def print_sizes(self):
+        if self._clothing is None:
+            raise TypeError("Clothing is None")
         self._clothing.print()
 
     def _open_datatable(self, datatable_path):
+        if self._app is None:
+            raise TypeError("App is None")
         self._data = PandasDataTable(
             datatable_path, encoding=Config.get_character_encoding()
         )
-        if Config.get_sc_resize_image() == False:
+        if Config.get_sc_resize_image() is False:
             condition = Helper.get_size_condition(
                 self._app.document_name
             )  # side effect if activedocument isn't the right one
             self._data.filter_isin("size", condition)
 
     def _open_sizes(self, file_path: str):
-        if Config.get_sc_resize_image() == False:
+        if Config.get_sc_resize_image() is False:
             return
 
-        self.clothing_name = file_path[6:-5]
-        self._clothing = ClothSizes(ClothSizes.read_clothing(file_path))
+        clothing_name = file_path[6:-5]
+        self._clothing = ClothSizes(ClothSizes.read_clothing(file_path), clothing_name)
 
     def _open_workspace(self, path):
         # I THINK I NEED A BUILDER CLASS HERE...
@@ -139,6 +164,13 @@ class PhotomaticPro:
         self._app.open(path)
 
     def start(self, convert_cmyk=False, progress_callback=False):
+        if self._app is None:
+            raise TypeError("App is None")
+        if Config.get_sc_resize_image() is True and self._clothing is None:
+            raise TypeError("Clothing is None")
+        if self._data is None:
+            raise TypeError("Data is None")
+
         log = ""
 
         folder_path = self._create_folderpath()
@@ -154,23 +186,24 @@ class PhotomaticPro:
             self._app.save_state()
 
             row_idx = row[0]
-            # row_num should be based on either row_idx + 1 or if Index column exist get that current existing Index.
+            # row_num should be based on either row_idx + 1 or if Index column exist
+            # get that current existing Index.
             row_num = row_idx + 1
 
             for col, cell in row[1].items():
                 self._app.fill_layers(col, cell)
 
-            if Config.get_sc_resize_image() == True and self._data.does_column_exist(
+            if Config.get_sc_resize_image() is True and self._data.does_column_exist(
                 "size"
             ):
                 size = self._data.at(row_idx, "size")
                 if not self._data.is_empty(size):
                     shortsize = self._clothing.get_shortsize(size)
-                    if shortsize != None:
+                    if shortsize is not None:
                         self._app.fill_layers("shortsize", shortsize)
 
                 size_found = self._change_doc_size(size)
-                if size_found == False:
+                if size_found is False:
                     log += f"picture #{row_num} size not found\n"
 
             # create file
@@ -187,11 +220,13 @@ class PhotomaticPro:
         return log
 
     def _transform_datatable(self, text_setting=TextSettings.DEFAULT):
+        if self._data is None:
+            raise TypeError("Data is None")
         if text_setting == TextSettings.DEFAULT:
             return
         elif text_setting == TextSettings.UPPERCASE:
-            self._data.transform(lambda s: s.upper() if type(s) == str else s)
+            self._data.transform(lambda s: s.upper() if isinstance(s, str) else s)
         elif text_setting == TextSettings.LOWERCASE:
-            self._data.transform(lambda s: s.lower() if type(s) == str else s)
+            self._data.transform(lambda s: s.lower() if isinstance(s, str) else s)
         elif text_setting == TextSettings.CAPITALIZE:
-            self._data.transform(lambda s: s.capitalize() if type(s) == str else s)
+            self._data.transform(lambda s: s.capitalize() if isinstance(s, str) else s)

@@ -12,7 +12,7 @@ def __dir__():
 
 
 class PhotoshopWorkspace:
-    def __dir__():
+    def __dir__(self):
         return " "
 
     def __init__(
@@ -48,7 +48,7 @@ class PhotoshopWorkspace:
 
     @property
     def document_fullname(self):
-        return self.document.fullName
+        return str(self.document.fullName)
 
     @property
     def layers(self):
@@ -86,8 +86,8 @@ class PhotoshopWorkspace:
     def create_document_placeholder(self):
         self.document.duplicate(f"{self.document_name} - placeholder")
 
-    def exceed_max_length(self, length, max):
-        return length > max
+    def exceed_max_length(self, length, max_length):
+        return length > max_length
 
     def fill_layers(self, key: str, value: str):
         for layer in self.iterate_layers():
@@ -98,12 +98,12 @@ class PhotoshopWorkspace:
                 if len(layer_name) == 1:
                     continue
 
-                max = self.get_max_length(layer_name[1])
-                if max is None:
+                max_length = self.get_max_length(layer_name[1])
+                if max_length is None:
                     continue
 
                 self.active_layer = layer
-                self.apply_parameter(max)
+                self.apply_parameter(max_length)
 
     def get_active_layer_dimension(self):
         dimension = {}

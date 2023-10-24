@@ -31,8 +31,17 @@ class ClothSizes:
     def __dir__(self):
         return " "
 
-    def __init__(self, sizes: list[Size]) -> None:
+    def __init__(self, sizes: list[Size], name) -> None:
         self.sizes = sizes
+        self.name = name
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, clothing_name):
+        self._name = clothing_name
 
     @property
     def sizes(self):
@@ -47,13 +56,16 @@ class ClothSizes:
     # method
     def get_shortsize(self, size_name: str):
         size = self.get_size(size_name)
-        if size != None:
+        if size is not None:
             return size.short_size
+
+        return None
 
     def get_size(self, size_name: str):
         for size in self.sizes:
             if Helper.compare_insensitive(size.name, size_name):
                 return size
+
         return None
 
     def print(self):

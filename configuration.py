@@ -18,7 +18,7 @@ class Config:
             except json.decoder.JSONDecodeError as e:
                 raise Exception(repr(e))
             except FileNotFoundError:
-                raise Exception("settings/settings.json is missing")
+                raise FileNotFoundError("settings/settings.json is missing")
 
     @classmethod
     def get_app_name(cls) -> str:
@@ -68,7 +68,7 @@ class Config:
         if cls.data is None:
             cls.load_config()
         data = cls.data["size_config"]["resize_image"]
-        return data if data != None and type(data) == bool else True
+        return data if data is not None and isinstance(data, bool) else True
 
     @classmethod
     def get_sc_sizes(cls):

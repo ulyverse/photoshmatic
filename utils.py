@@ -12,7 +12,7 @@ def __dir__():
 
 
 class Helper:
-    def __dir__():
+    def __dir__(self):
         return " "
 
     # PURE HELPER
@@ -41,7 +41,7 @@ class Helper:
         file_name_arr = document_name[:-4].replace("-", " ").replace("_", " ").split()
         for file in file_name_arr:
             for size in Config.get_sc_sizes():
-                if type(size) == list:
+                if isinstance(size, list):
                     for s in size:
                         if cls.compare_insensitive(s, file):
                             return size
@@ -51,15 +51,17 @@ class Helper:
         return None
 
     # PURE HELPER
-    def try_parse(digit: str) -> float | None:
+    @classmethod
+    def try_parse(cls, digit: str) -> float | None:
         try:
             num = float(digit)
             return num
-        except:
+        except Exception:
             return None
 
     # SETUP HELPER
-    def get_mac_address():
+    @classmethod
+    def get_mac_address(cls):
         return ":".join(("%012X" % uuid.getnode())[i : i + 2] for i in range(0, 12, 2))
 
     # PHOTOMATIC HELPER
@@ -75,10 +77,10 @@ class Helper:
         an array of both the original str, upper and lower of the size_name or an empty list
         """
         size_name = cls.extract_size_in_file(document)
-        if size_name == None:
+        if size_name is None:
             return []
 
-        if type(size_name) == list:
+        if isinstance(size_name, list):
             condition = []
             for size in size_name:
                 condition.append(size.lower())
@@ -89,7 +91,8 @@ class Helper:
 
         return [size_name, size_name.lower(), size_name.upper(), size_name.capitalize()]
 
-    def get_textsetting(settings):
+    @classmethod
+    def get_textsetting(cls, settings):
         if settings == TextSettings.DEFAULT.value:
             return TextSettings.DEFAULT
         elif settings == TextSettings.UPPERCASE.value:
@@ -102,14 +105,16 @@ class Helper:
             return None
 
     # GUI CMB PHOTOMATIC
-    def get_textsettings():
+    @classmethod
+    def get_textsettings(cls):
         txtset = list()
         for text_setting in TextSettings:
             txtset.append(text_setting.value)
         return txtset
 
     # SETUP HELPER
-    def get_uniq_identifier():
+    @classmethod
+    def get_uniq_identifier(cls):
         return hashlib.md5(
-            (Helper.get_mac_address() + "hehexd").encode("utf-8")
+            (cls.get_mac_address() + "hehexd").encode("utf-8")
         ).hexdigest()

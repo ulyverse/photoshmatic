@@ -21,7 +21,7 @@ def __dir__():
 
 
 class WindowFrameManager(tk.Tk):
-    def __dir__():
+    def __dir__(self):
         return " "
 
     def __init__(self):
@@ -77,7 +77,7 @@ class WindowFrameManager(tk.Tk):
 
 
 class WelcomeFrame(tk.Frame):
-    def __dir__():
+    def __dir__(self):
         return " "
 
     def __init__(self, master, font):
@@ -207,7 +207,7 @@ class MainSublimationAppFrame(tk.Frame):
         self.cmbSizes.state(
             ["readonly"] if Config.get_sc_resize_image() == True else ["disabled"]
         )
-        self._populate_cmbSizes()
+        self._populate_cmb_sizes()
 
         self.grpTextSettings = tk.Frame(self)
 
@@ -246,7 +246,7 @@ class MainSublimationAppFrame(tk.Frame):
 
         self._put_widgets()
 
-    def _populate_cmbSizes(self):
+    def _populate_cmb_sizes(self):
         sizes = ["Select Size"]
         for size in os.listdir("sizes/"):
             sizes.append(size[:-5])
