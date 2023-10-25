@@ -181,13 +181,14 @@ class PhotomaticPro:
 
         self._app.create_document_placeholder()
 
+        # to avoid calling this over and over again, this is O(N) btw not O(1) where N is columns
+        idx_exist = self._data.does_column_exist("index")
+
         for row in self._data.iterate_rows():
             self._app.save_state()
 
             row_idx = row[0]
-            # row_num should be based on either row_idx + 1 or if Index column exist
-            # get that current existing Index.
-            row_num = row_idx + 1  # type: ignore
+            row_num = (row[1][0] if idx_exist else row_idx) + 1  # type: ignore
 
             for col, cell in row[1].items():
                 self._app.fill_layers(col, cell)  # type: ignore

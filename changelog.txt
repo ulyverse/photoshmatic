@@ -3,8 +3,8 @@ V 1.0.2
 FEATURE
 	- Ellipse text now correctly changes the width
 	- No need to add 'h' for vertical texts
+	- Changing size of layer depends on the text alignment now instead of just top for vertical and middle for horizontal
 	- Made improvements to file format, (retaining proper number for one size per psd)
-	- Added option to separate by gender
 
 BUGS
 	- FIXED BUG: Incorrect name output due to csv sometimes
