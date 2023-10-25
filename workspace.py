@@ -1,6 +1,5 @@
 # dependency modules
 import photoshop.api as ps
-from photoshop.api.enumerations import TextType
 
 # custom modules
 from enumeration import UnitPreference

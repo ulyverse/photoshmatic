@@ -65,7 +65,7 @@ class PhotomaticPro:
         for ecol in self._get_fileformat_columns():
             ecol_value = self._data.at(row, ecol)
             if not self._data.is_empty(ecol_value):
-                file_info.append(ecol_value)
+                file_info.append(ecol_value.replace(".", ""))
 
         file_name = "_".join(file_info)
         return file_name
@@ -114,10 +114,14 @@ class PhotomaticPro:
         clothing_path: str,
         text_settings: TextSettings = TextSettings.DEFAULT,
     ):
-        self._open_workspace(workspace_path)
-        self._open_sizes(clothing_path)
-        self._open_datatable(datatable_path)
-        self._transform_datatable(text_settings)
+        try:
+            self._open_workspace(workspace_path)
+            self._open_sizes(clothing_path)
+            self._open_datatable(datatable_path)
+            self._transform_datatable(text_settings)
+        except Exception as e:
+            return repr(e)
+        return ""
 
     def print_df(self):
         if self._data is None:
@@ -171,52 +175,60 @@ class PhotomaticPro:
             raise TypeError("Data is None")
 
         log = ""
+        d_row, d_col = None, None
+        try:
+            folder_path = self._create_folderpath()
+            self._create_outputfolder(folder_path)
 
-        folder_path = self._create_folderpath()
-        self._create_outputfolder(folder_path)
+            error = self._check_parameter_error()
+            if error is not None:
+                log += f"Parameter invalid in these layers: {error}\n"
 
-        error = self._check_parameter_error()
-        if error is not None:
-            log += f"Parameter invalid in these layers: {error}\n"
+            self._app.create_document_placeholder()
 
-        self._app.create_document_placeholder()
+            # to avoid calling this over and over again, this is O(N) btw not O(1) where N is columns
+            idx_exist = self._data.does_column_exist("index")
 
-        # to avoid calling this over and over again, this is O(N) btw not O(1) where N is columns
-        idx_exist = self._data.does_column_exist("index")
+            for row in self._data.iterate_rows():
+                self._app.save_state()
 
-        for row in self._data.iterate_rows():
-            self._app.save_state()
+                row_idx = row[0]
+                d_row = row_idx
+                row_num = (row[1][0] if idx_exist else row_idx) + 1  # type: ignore
 
-            row_idx = row[0]
-            row_num = (row[1][0] if idx_exist else row_idx) + 1  # type: ignore
+                for col, cell in row[1].items():
+                    d_col = col
+                    self._app.fill_layers(col, cell)  # type: ignore
 
-            for col, cell in row[1].items():
-                self._app.fill_layers(col, cell)  # type: ignore
+                if (
+                    Config.get_sc_resize_image() is True
+                    and self._data.does_column_exist("size")
+                ):
+                    size = self._data.at(row_idx, "size")
+                    if not self._data.is_empty(size):
+                        shortsize = self._clothing.get_shortsize(size)  # type: ignore
+                        if shortsize is not None:
+                            self._app.fill_layers("shortsize", shortsize)
 
-            if Config.get_sc_resize_image() is True and self._data.does_column_exist(
-                "size"
-            ):
-                size = self._data.at(row_idx, "size")
-                if not self._data.is_empty(size):
-                    shortsize = self._clothing.get_shortsize(size)  # type: ignore
-                    if shortsize is not None:
-                        self._app.fill_layers("shortsize", shortsize)
+                    size_found = self._change_doc_size(size)
+                    if size_found is False:
+                        log += f"picture #{row_num} size not found\n"
 
-                size_found = self._change_doc_size(size)
-                if size_found is False:
-                    log += f"picture #{row_num} size not found\n"
+                # create file
+                file_format = self._create_fileformat(row_idx)
+                path = self._create_filepath(folder_path, row_num, file_format)
+                self._app.save_as(path)
 
-            # create file
-            file_format = self._create_fileformat(row_idx)
-            path = self._create_filepath(folder_path, row_num, file_format)
-            self._app.save_as(path)
+                self._app.revert_state()
 
-            self._app.revert_state()
+                if convert_cmyk:
+                    self._app.convert_cmyk(path)
 
-            if convert_cmyk:
-                self._app.convert_cmyk(path)
-
-        self._app.close()
+            self._app.close()
+        except Exception as e:
+            log += repr(e)
+            if d_row is not None and d_col is not None:
+                log += f"Stopped at column: {d_col} row: {d_row} cell: {self._data.at(d_row, d_col)}"
         return log
 
     def _transform_datatable(self, text_setting=TextSettings.DEFAULT):
