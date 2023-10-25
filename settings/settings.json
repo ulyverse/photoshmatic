@@ -7,7 +7,7 @@
     "char_encoding":"",
     "size_config":{
         "description":"for users who separates sizes by documents",
-        "resize_image":false,
+        "resize_image":true,
         "sizes":["3XS", "2XS", ["S","Small"], ["M","Medium"], ["L","Large"], "XS", "XL", "2XL", "3XL"]
     },
     "naming_preference":{

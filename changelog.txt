@@ -1,0 +1,23 @@
+
+V 1.0.2
+FEATURE
+	- Ellipse text now correctly changes the width
+	- No need to add 'h' for vertical texts
+	- Made improvements to file format, (retaining proper number for one size per psd)
+	- Added option to separate by gender
+
+BUGS
+	- FIXED BUG: Incorrect name output due to csv sometimes
+	- FIXED BUG: Empty Layers like " " would crash the app
+	- FIXED BUG: where hidden layer would be included
+
+
+
+V 1.0.1
+FEATURE
+	- Added One Size per PSD Option
+	- Added app name preference
+	- Added ruler unit preference
+
+V 1.0.0
+Initial Release

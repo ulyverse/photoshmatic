@@ -62,7 +62,7 @@ class PhotomaticPro:
             raise TypeError("Data is none")
 
         file_info = []
-        for ecol in self._get_existing_filenamecol():
+        for ecol in self._get_fileformat_columns():
             ecol_value = self._data.at(row, ecol)
             if not self._data.is_empty(ecol_value):
                 file_info.append(ecol_value)
@@ -95,17 +95,16 @@ class PhotomaticPro:
     def _create_outputfolder(self, folder_path):
         Path(folder_path).mkdir(exist_ok=True)
 
-    def _get_existing_filenamecol(self):
+    def _get_fileformat_columns(self):
         # THIS CAN BE CACHED?
         if self._data is None:
             raise TypeError("Data is none")
 
-        required_col = ["name", "size", Config.get_np_number_preference()]
+        format_col = ["name", "size", Config.get_np_number_preference()]
         existing_col = []
-        for rcol in required_col:
-            for ecol in self._data.columns:
-                if rcol in ecol.lower():
-                    existing_col.append(ecol)
+        for fcol in format_col:
+            if self._data.does_column_exist(fcol):
+                existing_col.append(fcol)
         return existing_col
 
     def initialize_components(

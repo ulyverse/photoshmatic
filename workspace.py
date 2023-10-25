@@ -1,5 +1,6 @@
 # dependency modules
 import photoshop.api as ps
+from photoshop.api.enumerations import TextType
 
 # custom modules
 from enumeration import UnitPreference
@@ -70,10 +71,20 @@ class PhotoshopWorkspace:
 
         if self.exceed_max_length(layer_dimension[orientation], max_length):
             ratio = max_length / layer_dimension[orientation] * 100
-            if horizontal:
-                self.resize_layer(ratio, 100, ps.AnchorPosition.MiddleCenter)
+            not_ellipse = True
+
+            try:
+                self.active_layer.textItem.kind
+            except Exception:
+                not_ellipse = False
+
+            if not_ellipse:
+                if horizontal:
+                    self.horizontal_scale(ratio)
+                else:
+                    self.vertical_scale(ratio)
             else:
-                self.resize_layer(100, ratio, ps.AnchorPosition.TopCenter)
+                self.ellipse_scale(max_length, ratio)
 
     def close(self):
         self.document.close(ps.SaveOptions.DoNotSaveChanges)
@@ -86,11 +97,20 @@ class PhotoshopWorkspace:
     def create_document_placeholder(self):
         self.document.duplicate(f"{self.document_name} - placeholder")
 
+    def ellipse_scale(self, max_length, ratio):
+        scale = ratio
+        while self.get_active_layer_dimension()[Dimension.WIDTH] > max_length:
+            self.horizontal_scale(scale)
+            scale -= 5
+
     def exceed_max_length(self, length, max_length):
         return length > max_length
 
     def fill_layers(self, key: str, value: str):
         for layer in self.iterate_layers():
+            if layer.visible is False:
+                continue
+
             layer_name = layer.name.split()
             if len(layer_name) > 0 and layer_name[0] == key:
                 layer.textItem.contents = value
@@ -130,6 +150,9 @@ class PhotoshopWorkspace:
 
         return rulerunit
 
+    def horizontal_scale(self, ratio):
+        self.active_layer.textItem.horizontalScale = ratio
+
     def is_active_layer_horizontal(self):
         return self.text_direction == ps.Direction.Horizontal
 
@@ -161,3 +184,6 @@ class PhotoshopWorkspace:
 
     def set_unit_preference(self, ruler_unit):
         self.application.preferences.rulerUnits = self.get_ruler_unit(ruler_unit)
+
+    def vertical_scale(self, ratio):
+        self.active_layer.textItem.verticalScale = ratio
