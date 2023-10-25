@@ -25,7 +25,7 @@ class PandasDataTable:
         """
         return column_name.lower() in self.columns
 
-    def filter_isin(self, column, condition: list[str], drop_option: bool = True):
+    def filter_isin(self, column, condition: list[str], drop_option: bool = False):
         df = self.__dataframe
         self.__dataframe = df[df[column].isin(condition)]
         self.__dataframe.reset_index(drop=drop_option, inplace=True)

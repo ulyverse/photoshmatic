@@ -356,10 +356,12 @@ class MainSublimationAppFrame(tk.Frame):
 
             start_time = time.perf_counter()
 
-            self.photomatic.initialize_components(
+            log = self.photomatic.initialize_components(
                 document, data_table, sizes, text_setting
             )
-            log = self.photomatic.start(convert_cmyk=self.is_cmyk.get())
+
+            if log == "":
+                log += self.photomatic.start(convert_cmyk=self.is_cmyk.get())
 
             self._txt_append_text(
                 self.txt_result,
