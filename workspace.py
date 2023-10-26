@@ -63,10 +63,14 @@ class PhotoshopWorkspace:
         return self.application.preferences.rulerUnits
 
     # METHODS
-    def apply_parameter(self, max_length):
+    def apply_parameter(self, max_length, param=""):
         layer_dimension = self.get_active_layer_dimension()
         horizontal = self.is_active_layer_horizontal()
-        orientation = Dimension.WIDTH if horizontal else Dimension.HEIGHT
+        orientation = (
+            Dimension.WIDTH
+            if horizontal and not Helper.compare_insensitive(param, "h")
+            else Dimension.HEIGHT
+        )
 
         if self.exceed_max_length(layer_dimension[orientation], max_length):
             ratio = max_length / layer_dimension[orientation] * 100
@@ -78,10 +82,13 @@ class PhotoshopWorkspace:
                 not_ellipse = False
 
             if not_ellipse:
-                if horizontal:
+                if horizontal or (
+                    Helper.compare_insensitive(param, "h") and horizontal
+                ):
                     self.horizontal_scale(ratio)
                 else:
                     self.vertical_scale(ratio)
+
             else:
                 self.ellipse_scale(max_length, ratio)
 
@@ -122,7 +129,8 @@ class PhotoshopWorkspace:
                     continue
 
                 self.active_layer = layer
-                self.apply_parameter(max_length)
+                param = layer_name[1][:1]  # get parameter incase someone puts H
+                self.apply_parameter(max_length, param)
 
     def get_active_layer_dimension(self):
         dimension = {}
