@@ -78,7 +78,7 @@ class PhotomaticPro:
 
         return path
 
-    def _create_folderpath(self) -> str:
+    def _create_folderpath(self):
         if self._app is None:
             raise TypeError("App is None")
 
@@ -197,6 +197,8 @@ class PhotomaticPro:
                 row_num = (row[1][0] if idx_exist else row_idx) + 1  # type: ignore
 
                 for col, cell in row[1].items():
+                    if col == "index":
+                        continue
                     d_col = col
                     self._app.fill_layers(col, cell)  # type: ignore
 

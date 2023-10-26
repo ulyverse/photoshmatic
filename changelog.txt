@@ -1,4 +1,8 @@
 
+V 1.0.2 hotfix
+BUGS
+	- FIXED BUG: 90 degrees vertical text using "h=" parameter
+
 V 1.0.2
 FEATURE
 	- Ellipse text now correctly changes the width
@@ -10,8 +14,6 @@ BUGS
 	- FIXED BUG: Incorrect name output due to csv sometimes
 	- FIXED BUG: Empty Layers like " " would crash the app
 	- FIXED BUG: where hidden layer would be included
-
-
 
 V 1.0.1
 FEATURE
