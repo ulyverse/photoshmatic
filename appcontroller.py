@@ -95,6 +95,22 @@ class PhotomaticPro:
     def _create_outputfolder(self, folder_path):
         Path(folder_path).mkdir(exist_ok=True)
 
+    def extract_size_in_file(self, document_name: str) -> str | list | None:
+        """
+        gets the size in a file, i.e, 'small - mydesign.psd' returns small, small could also be s
+        """
+        file_name_arr = document_name[:-4].replace("-", " ").replace("_", " ").split()
+        for file in file_name_arr:
+            for size in Config.get_sc_sizes():
+                if isinstance(size, list):
+                    for s in size:
+                        if Helper.compare_insensitive(s, file):
+                            return size
+                else:
+                    if Helper.compare_insensitive(size, file):
+                        return size
+        return None
+
     def _get_fileformat_columns(self):
         # THIS CAN BE CACHED?
         if self._data is None:
@@ -145,9 +161,9 @@ class PhotomaticPro:
             datatable_path, encoding=Config.get_character_encoding()
         )
         if Config.get_sc_resize_image() is False:
-            condition = Helper.get_size_condition(
-                self._app.document_name
-            )  # side effect if activedocument isn't the right one
+            words = self.extract_size_in_file(self._app.document_name)
+            condition = Helper.get_condition(words)
+
             self._data.filter_isin("size", condition)
 
     def _open_sizes(self, file_path: str):

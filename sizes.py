@@ -1,6 +1,3 @@
-# dependency modules
-import json
-
 # custom modules
 from utils import Helper
 
@@ -74,22 +71,16 @@ class ClothSizes:
 
     @classmethod
     def read_clothing(cls, file_path):
-        try:
-            sizes = []
-            with open(str(file_path)) as s:
-                json_raw = json.load(s)
+        sizes = []
+        clothing = Helper.extract_json(file_path, file_path)
 
-            for json_raw_sizes in json_raw["sizes"]:
-                sizes.append(
-                    Size(
-                        json_raw_sizes["name"],
-                        json_raw_sizes["width"],
-                        json_raw_sizes["height"],
-                        json_raw_sizes["shortsize"],
-                    )
+        for size in clothing["sizes"]:
+            sizes.append(
+                Size(
+                    size["name"],
+                    size["width"],
+                    size["height"],
+                    size["shortsize"],
                 )
-            return sizes
-        except json.decoder.JSONDecodeError as e:
-            raise Exception(repr(e))
-        except FileNotFoundError:
-            raise Exception(f"{file_path} is missing")
+            )
+        return sizes

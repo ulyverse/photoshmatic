@@ -1,5 +1,5 @@
 # dependency modules
-import json
+from utils import Helper
 
 
 def __dir__():
@@ -12,13 +12,7 @@ class Config:
     @classmethod
     def load_config(cls):
         if cls.data is None:
-            try:
-                with open("settings/settings.json", "r") as f:
-                    cls.data = json.load(f)
-            except json.decoder.JSONDecodeError as e:
-                raise Exception(repr(e))
-            except FileNotFoundError:
-                raise FileNotFoundError("settings/settings.json is missing")
+            cls.data = Helper.extract_json("settings/settings.json", "settings.json")
 
     @classmethod
     def get_app_name(cls) -> str:

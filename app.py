@@ -14,7 +14,7 @@ def main():
     try:
         Config.load_config()
     except Exception as e:
-        messagebox.showerror("Photomatic - settings.json incorrect format", str(e))
+        messagebox.showerror("Photomatic Error", str(e))
         return
     WindowFrameManager().run()
 

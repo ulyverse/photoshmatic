@@ -25,7 +25,7 @@ class PandasDataTable:
         """
         return column_name.lower() in self.columns
 
-    def filter_isin(self, column, condition: list[str], drop_option: bool = False):
+    def filter_isin(self, column, condition: set[str], drop_option: bool = False):
         df = self.__dataframe
         self.__dataframe = df[df[column].isin(condition)]
         self.__dataframe.reset_index(drop=drop_option, inplace=True)
@@ -57,10 +57,14 @@ class PandasDataTable:
             self.__dataframe = pd.read_csv(path, encoding=encoding, dtype=str)
             self.__dataframe.columns = self.columns.str.lower()
             self.__dataframe.fillna("", inplace=True)
-        except EmptyDataError as e:
+        except EmptyDataError:
             raise EmptyDataError("The file is empty.")
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             raise Exception("The file does not exist.")
+        except UnicodeDecodeError:
+            raise Exception(
+                "The character encoding of the data doesn't match the settings > character_encoding "
+            )
 
     def transform(self, option):
         self.__dataframe = self.__dataframe.applymap(option)
