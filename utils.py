@@ -5,6 +5,7 @@ import json
 
 # custom modules
 from enumeration import TextSettings
+from enumeration import UnitPreference
 
 
 def __dir__():
@@ -68,17 +69,18 @@ class Helper:
         return set()
 
     @classmethod
-    def get_textsetting(cls, settings):
-        if settings == TextSettings.DEFAULT.value:
-            return TextSettings.DEFAULT
-        elif settings == TextSettings.UPPERCASE.value:
-            return TextSettings.UPPERCASE
-        elif settings == TextSettings.LOWERCASE.value:
-            return TextSettings.LOWERCASE
-        elif settings == TextSettings.CAPITALIZE.value:
-            return TextSettings.CAPITALIZE
-        else:
-            return TextSettings.DEFAULT
+    def find_textsetting(cls, value):
+        for text_setting in TextSettings:
+            if text_setting.value == value:
+                return text_setting
+        return TextSettings.DEFAULT
+
+    @classmethod
+    def find_unitpreference(cls, value):
+        for unit_pref in UnitPreference:
+            if unit_pref == value:
+                return UnitPreference
+        return UnitPreference.INCHES
 
     # GUI CMB PHOTOMATIC
     @classmethod

@@ -347,7 +347,7 @@ class MainSublimationAppFrame(tk.Frame):
         else:
             self.progress_bar.stop()
             self._refresh_text_box()
-            text_setting = Helper.get_textsetting(self.cmb_text_settings.get())
+            text_setting = Helper.find_textsetting(self.cmb_text_settings.get())
 
             sizes = rf"sizes/{self.cmb_sizes.get()}.json"
             document = self.lbl_document_path["text"]
