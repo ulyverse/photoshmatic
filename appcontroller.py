@@ -4,6 +4,7 @@ from pathlib import Path
 # custom modules
 from configuration import Config
 from data import PandasDataTable
+from enumeration import Gender
 from enumeration import TextSettings
 from sizes import ClothSizes
 from utils import Helper
@@ -95,6 +96,28 @@ class PhotomaticPro:
     def _create_outputfolder(self, folder_path):
         Path(folder_path).mkdir(exist_ok=True)
 
+    def filter_by_gender(self, gender: Gender):
+        if self._data is None:
+            raise TypeError("Data is None")
+
+        condition = None
+        if gender == Gender.MALE:
+            condition = ["M", "Boy", "Male"]
+        elif gender == Gender.FEMALE:
+            condition = ["F", "Girl", "Female"]
+
+        if not self._data.does_column_exist("gender") or condition is None:
+            return False
+
+        self._data.filter("gender", condition)
+        return True
+
+    def _filter_by_size(self, size_name: str | list[str] | None):
+        if self._data is None:
+            raise TypeError("Data is None")
+
+        self._data.filter("size", size_name, drop_option=False)
+
     def extract_size_in_file(self, document_name: str) -> str | list | None:
         """
         gets the size in a file, i.e, 'small - mydesign.psd' returns small, small could also be s
@@ -161,10 +184,8 @@ class PhotomaticPro:
             datatable_path, encoding=Config.get_character_encoding()
         )
         if Config.get_sc_resize_image() is False:
-            words = self.extract_size_in_file(self._app.document_name)
-            condition = Helper.get_condition(words)
-
-            self._data.filter_isin("size", condition)
+            size_in_file = self.extract_size_in_file(self._app.document_name)
+            self._filter_by_size(size_in_file)
 
     def _open_sizes(self, file_path: str):
         if Config.get_sc_resize_image() is False:

@@ -1,25 +1,33 @@
+V 1.0.3 
+ADDED
+	- filtering by gender
+
+BUGFIX
+	- not properly adjusting text size if the vertical/horizontal scale isn't 100
+
 
 V 1.0.2 hotfix
-BUGS
-	- FIXED BUG: 90 degrees vertical text using "h=" parameter
+BUGFIX
+	- 90 degrees vertical text using "h=" parameter
 
 V 1.0.2
-FEATURE
-	- Ellipse text now correctly changes the width
-	- No need to add 'h' for vertical texts
-	- Changing size of layer depends on the text alignment now instead of just top for vertical and middle for horizontal
-	- Made improvements to file format, (retaining proper number for one size per psd)
+ADDED
+	- Ellipse text autofit
 
-BUGS
-	- FIXED BUG: Incorrect name output due to csv sometimes
-	- FIXED BUG: Empty Layers like " " would crash the app
-	- FIXED BUG: where hidden layer would be included
+CHANGED
+	- Made improvements to text autofit (no more parameter, based on text alignment)
+	- Made improvements to file format (retaining proper number for one size per psd)
+
+BUGFIX
+	- Incorrect name output due to csv sometimes
+	- Empty Layers like " " would crash the app
+	- hidden layer will not be included anymore
 
 V 1.0.1
-FEATURE
-	- Added One Size per PSD Option
-	- Added app name preference
-	- Added ruler unit preference
+ADDED
+	- One Size per PSD option
+	- app name preference
+	- ruler unit preference
 
 V 1.0.0
 Initial Release

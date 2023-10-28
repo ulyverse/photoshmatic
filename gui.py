@@ -14,6 +14,7 @@ from requests.exceptions import Timeout
 import setup
 from appcontroller import PhotomaticPro
 from configuration import Config
+from enumeration import Gender
 from utils import Helper
 
 
@@ -168,19 +169,13 @@ class MainSublimationAppFrame(tk.Frame):
         if is_trial:
             self.master.after(1000 * 60 * 60, self._expire)
 
-        self.master.minsize(817, 400)
+        self.master.minsize(875, 475)
         self._font_style = font
 
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=2)
-        self.columnconfigure(2, weight=2)
-
         self.rowconfigure(0)
-        self.rowconfigure(1)
-        self.rowconfigure(2, pad=15)
-        self.rowconfigure(3)
-        self.rowconfigure(4, pad=15)
-        self.rowconfigure(5, weight=4)
+        self.rowconfigure(1, weight=1)
+
+        self._init_frames()
         self._init_widgets()
         self.photomatic = PhotomaticPro()
 
@@ -188,44 +183,76 @@ class MainSublimationAppFrame(tk.Frame):
         messagebox.showinfo("Photomatic", "Your trial has expired")
         self.master.switch_frame(WelcomeFrame)
 
-    def _init_widgets(self):
-        self._hacky_frame = tk.Frame(self)
+    def filter_by_gender(self):
+        gender = self.cmb_gender.get()
+        if gender == "all":
+            return
+        if gender == "male":
+            self.photomatic.filter_by_gender(Gender.MALE)
+        elif gender == "female":
+            self.photomatic.filter_by_gender(Gender.FEMALE)
 
+    def _init_frames(self):
+        self._grp_header = tk.Frame(self)
+        self._grp_body = tk.Frame(self, borderwidth=1)
+
+        self._grp_header.grid(row=0)
+        self._grp_body.grid(row=1, sticky="N")
+
+        self._grp_body.rowconfigure(0, weight=1)
+        self._grp_body.rowconfigure(1, weight=1)
+
+        self._grp_upper_body = tk.Frame(self._grp_body)
+        self._grp_lower_body = tk.Frame(self._grp_body)
+
+        self._grp_upper_body.rowconfigure(1, pad=10)
+
+        self._grp_upper_body.columnconfigure(0, weight=1)
+        self._grp_upper_body.columnconfigure(1, weight=1)
+        self._grp_upper_body.columnconfigure(2, weight=1)
+        self._grp_upper_body.columnconfigure(3, weight=1)
+
+        self._grp_upper_body.grid(row=0, sticky="WE")
+        self._grp_lower_body.grid(row=1, sticky="WE")
+
+        self._grp_lower_body.columnconfigure(0, weight=1)
+
+    def _init_widgets(self):
         self._lbl_company_name = tk.Label(
-            self._hacky_frame,
+            self._grp_header,
             text=Config.get_app_name(),
             font=("Arial Bold Italic", 24),
         )
-        self._separator = ttk.Separator(self._hacky_frame, orient="horizontal")
+        self._separator = ttk.Separator(self._grp_header, orient="horizontal")
 
         # 1
         self.btn_photoshop = tk.Button(
-            self,
+            self._grp_upper_body,
             text="Select Photoshop",
             command=self._select_document,
             font=self._font_style,
             cursor="hand2",
         )
-        self.lbl_document_path = tk.Label(self, font=self._font_style)
+        self.lbl_document_path = tk.Label(self._grp_upper_body, font=self._font_style)
 
         # 2
         self.btn_csv = tk.Button(
-            self,
+            self._grp_upper_body,
             text="Select Csv",
             command=self._select_datatable,
             font=self._font_style,
             cursor="hand2",
         )
-        self.lbl_datatable_path = tk.Label(self, font=self._font_style)
+        self.lbl_datatable_path = tk.Label(self._grp_upper_body, font=self._font_style)
 
         # 3
-        self.cmb_sizes = ttk.Combobox(self, font=self._font_style)
+        self.cmb_sizes = ttk.Combobox(self._grp_upper_body, font=self._font_style)
         self.cmb_sizes.state(
             ["readonly"] if Config.get_sc_resize_image() == True else ["disabled"]
         )
         self._populate_cmb_sizes()
 
-        self.grp_text_settings = tk.Frame(self)
+        self.grp_text_settings = tk.Frame(self._grp_upper_body)
 
         self.lbl_text_settings = tk.Label(
             self.grp_text_settings, text="Text transform: "
@@ -236,9 +263,18 @@ class MainSublimationAppFrame(tk.Frame):
         self.cmb_text_settings["values"] = Helper.get_textsettings()
         self.cmb_text_settings.current(0)
 
+        self.grp_filter_gender = tk.Frame(self._grp_upper_body)
+
+        self.lbl_gender = tk.Label(self.grp_filter_gender, text="gender: ")
+
+        self.cmb_gender = ttk.Combobox(self.grp_filter_gender, width=10)
+        self.cmb_gender.state(["readonly"])
+        self.cmb_gender["values"] = Helper.get_gendersettings()
+        self.cmb_gender.current(0)
+
         self.is_cmyk = BooleanVar()
         self.checkbox_cmyk = ttk.Checkbutton(
-            self.grp_text_settings,
+            self._grp_upper_body,
             text="Convert image to cmyk",
             variable=self.is_cmyk,
             onvalue=True,
@@ -246,7 +282,7 @@ class MainSublimationAppFrame(tk.Frame):
         )
 
         self.btn_start = tk.Button(
-            self,
+            self._grp_upper_body,
             text="START",
             command=self._start,
             font=self._font_style,
@@ -254,11 +290,11 @@ class MainSublimationAppFrame(tk.Frame):
             cursor="hand2",
         )
 
-        # 4
-        self.progress_bar = ttk.Progressbar(self)
+        # 1
+        self.progress_bar = ttk.Progressbar(self._grp_lower_body)
 
-        # 5
-        self.txt_result = tk.Text(self, width=100, height=10)
+        # 2
+        self.txt_result = tk.Text(self._grp_lower_body, width=100, height=10)
         self.txt_result["state"] = "disabled"
         self._refresh_text_box()
 
@@ -288,37 +324,44 @@ class MainSublimationAppFrame(tk.Frame):
         )
 
     def _put_widgets(self):
-        # 0 this is hacky fix later
-        self._hacky_frame.grid(row=0, column=0, sticky="WE", pady=(0, 25), columnspan=3)
-
+        # header
+        self._grp_header.grid(row=0, column=0, sticky="WE", pady=(0, 25))
         self._lbl_company_name.grid(row=0, column=0, sticky="E")
-
         self._separator.grid(row=1, column=0, ipadx=400)
 
+        # upper frame
         # 1
-        self.btn_photoshop.grid(row=1, column=0, sticky="WE", padx=(0, 30))
-        self.lbl_document_path.grid(row=1, column=1, sticky="W", columnspan=2)
+        self.btn_photoshop.grid(row=0, column=0, sticky="WE", padx=(0, 30))
+        self.lbl_document_path.grid(row=0, column=1, sticky="W", columnspan=3)
 
         # 2
-        self.btn_csv.grid(row=2, column=0, sticky="WE", padx=(0, 30))
-        self.lbl_datatable_path.grid(row=2, column=1, sticky="W", columnspan=2)
+        self.btn_csv.grid(row=1, column=0, sticky="WE", padx=(0, 30))
+        self.lbl_datatable_path.grid(row=1, column=1, sticky="W", columnspan=3)
 
         # 3
-        self.cmb_sizes.grid(row=3, column=0, sticky="WE", padx=(0, 30))
+        self.cmb_sizes.grid(row=2, column=0, sticky="WE", padx=(0, 30))
 
-        # grpTextSettings
-        self.grp_text_settings.grid(row=3, column=1, sticky="WE", padx=(0, 30))
+        self.grp_text_settings.grid(row=2, column=1, sticky="WE")
+
         self.lbl_text_settings.pack(side="left")
-        self.cmb_text_settings.pack(side="left", padx=(0, 30))
-        self.checkbox_cmyk.pack(side="left")
+        self.cmb_text_settings.pack(side="left")
 
-        self.btn_start.grid(row=3, column=2, sticky="WE")
+        self.grp_filter_gender.grid(row=2, column=2, sticky="WE")
+        self.lbl_gender.pack(side="left")
+        self.cmb_gender.pack(side="left")
 
-        # 4
-        self.progress_bar.grid(row=4, column=0, columnspan=3, sticky="WE", pady=(20, 0))
+        self.checkbox_cmyk.grid(row=2, column=3, sticky="WE")
 
-        # 5
-        self.txt_result.grid(row=5, column=0, columnspan=3, sticky="NEWS", pady=(0, 20))
+        self.btn_start.grid(row=3, column=3, sticky="WE", pady=(10, 0))
+
+        # lower frame
+        # 1
+        self.progress_bar.grid(
+            row=0, column=0, columnspan=4, sticky="WE", pady=(20, 10)
+        )
+
+        # 2
+        self.txt_result.grid(row=1, column=0, columnspan=4, sticky="NEWS", pady=(0, 20))
 
     def _select_datatable(self):
         datatable_path = filedialog.askopenfilename(
@@ -361,6 +404,7 @@ class MainSublimationAppFrame(tk.Frame):
             )
 
             if log == "":
+                self.filter_by_gender()
                 log += self.photomatic.start(convert_cmyk=self.is_cmyk.get())
 
             self._txt_append_text(

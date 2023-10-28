@@ -82,6 +82,11 @@ class Helper:
                 return UnitPreference
         return UnitPreference.INCHES
 
+    @classmethod
+    def get_gendersettings(cls):
+        gender = ["all", "male", "female"]
+        return gender
+
     # GUI CMB PHOTOMATIC
     @classmethod
     def get_textsettings(cls):

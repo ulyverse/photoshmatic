@@ -2,6 +2,9 @@
 import pandas as pd
 from pandas.errors import EmptyDataError
 
+# custom modules
+from utils import Helper
+
 
 def __dir__():
     return " "
@@ -25,7 +28,11 @@ class PandasDataTable:
         """
         return column_name.lower() in self.columns
 
-    def filter_isin(self, column, condition: set[str], drop_option: bool = False):
+    def filter(self, column, where: str | list[str] | None, drop_option: bool = True):
+        condition = Helper.get_condition(where)
+        self.filter_isin(column, condition, drop_option)
+
+    def filter_isin(self, column, condition: set[str], drop_option: bool = True):
         df = self.__dataframe
         self.__dataframe = df[df[column].isin(condition)]
         self.__dataframe.reset_index(drop=drop_option, inplace=True)

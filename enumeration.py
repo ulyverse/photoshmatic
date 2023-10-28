@@ -11,6 +11,11 @@ class Dimension(Enum):
     HEIGHT = 1
 
 
+class Gender(Enum):
+    MALE = 0
+    FEMALE = 1
+
+
 class TextSettings(Enum):
     DEFAULT = "default"
     UPPERCASE = "uppercase"
