@@ -23,20 +23,20 @@ class PhotoshopWorkspace:
         self.__jpg_save_preference = ps.JPEGSaveOptions(image_quality)
 
     @property
-    def active_layer(self):
-        return self.document.activeLayer
-
-    @active_layer.setter
-    def active_layer(self, layer):
-        self.document.activeLayer = layer
-
-    @property
     def application(self):
         return self.__application
 
     @application.setter
     def application(self, app: ps.Application):
         self.__application = app
+
+    @property
+    def current_layer(self):
+        return self._current_layer
+
+    @current_layer.setter
+    def current_layer(self, layer):
+        self._current_layer = layer
 
     @property
     def document(self):
@@ -56,7 +56,7 @@ class PhotoshopWorkspace:
 
     @property
     def text_direction(self):
-        return self.active_layer.textItem.direction
+        return self.current_layer.textItem.direction
 
     @property
     def unit_preference(self):
@@ -64,8 +64,8 @@ class PhotoshopWorkspace:
 
     # METHODS
     def apply_parameter(self, max_length, param=""):
-        layer_dimension = self.get_active_layer_dimension()
-        horizontal = self.is_active_layer_horizontal()
+        layer_dimension = self.get_current_layer_dimension()
+        horizontal = self.is_current_layer_horizontal()
         orientation = (
             Dimension.WIDTH
             if horizontal and not Helper.compare_insensitive(param, "h")
@@ -81,7 +81,7 @@ class PhotoshopWorkspace:
             not_ellipse = True
 
             try:
-                self.active_layer.textItem.kind
+                self.current_layer.textItem.kind
             except Exception:
                 not_ellipse = False
 
@@ -109,7 +109,7 @@ class PhotoshopWorkspace:
 
     def ellipse_scale(self, max_length, ratio):
         scale = ratio
-        while self.get_active_layer_dimension()[Dimension.WIDTH] > max_length:
+        while self.get_current_layer_dimension()[Dimension.WIDTH] > max_length:
             self.set_horizontal_scale(scale)
             scale -= 5
 
@@ -132,19 +132,19 @@ class PhotoshopWorkspace:
                 if max_length is None:
                     continue
 
-                self.active_layer = layer
+                self.current_layer = layer
                 param = layer_name[1][:1]  # get parameter incase someone puts H
                 self.apply_parameter(max_length, param)
 
-    def get_active_layer_dimension(self):
+    def get_current_layer_dimension(self):
         dimension = {}
-        bounds = self.active_layer.bounds
+        bounds = self.current_layer.bounds
         dimension[Dimension.WIDTH] = bounds[2] - bounds[0]
         dimension[Dimension.HEIGHT] = bounds[3] - bounds[1]
         return dimension
 
     def get_horizontal_scale(self):
-        return self.active_layer.textItem.horizontalScale
+        return self.current_layer.textItem.horizontalScale
 
     def get_max_length(self, parameter):
         return (
@@ -170,9 +170,9 @@ class PhotoshopWorkspace:
         )
 
     def get_vertical_scale(self):
-        return self.active_layer.textItem.verticalScale
+        return self.current_layer.textItem.verticalScale
 
-    def is_active_layer_horizontal(self):
+    def is_current_layer_horizontal(self):
         return self.text_direction == ps.Direction.Horizontal
 
     def iterate_layers(self):
@@ -190,7 +190,7 @@ class PhotoshopWorkspace:
         self.document.resizeImage(width, height, self.document.resolution)
 
     def resize_layer(self, horizontal, vertical, anchor):
-        self.active_layer.resize(horizontal, vertical, anchor)
+        self.current_layer.resize(horizontal, vertical, anchor)
 
     def revert_state(self):
         self.document.activeHistoryState = self.saved_state
@@ -202,10 +202,10 @@ class PhotoshopWorkspace:
         self.saved_state = self.document.activeHistoryState
 
     def set_horizontal_scale(self, ratio):
-        self.active_layer.textItem.horizontalScale = ratio
+        self.current_layer.textItem.horizontalScale = ratio
 
     def set_unit_preference(self, ruler_unit):
         self.application.preferences.rulerUnits = self.get_ruler_unit(ruler_unit)
 
     def set_vertical_scale(self, ratio):
-        self.active_layer.textItem.verticalScale = ratio
+        self.current_layer.textItem.verticalScale = ratio
