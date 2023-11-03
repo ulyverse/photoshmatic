@@ -122,7 +122,7 @@ class PhotoshopWorkspace:
                 continue
 
             layer_name = layer.name.split()
-            if len(layer_name) > 0 and layer_name[0] == key:
+            if len(layer_name) > 0 and Helper.compare_insensitive(layer_name[0], key):
                 layer.textItem.contents = value
 
                 if len(layer_name) == 1:
