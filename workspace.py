@@ -175,6 +175,9 @@ class PhotoshopWorkspace:
     def is_current_layer_horizontal(self):
         return self.text_direction == ps.Direction.Horizontal
 
+    def is_text_layer(self, layer):
+        return layer.kind == ps.LayerKind.TextLayer
+
     def iterate_layers(self):
         for layer in self.layers:
             yield layer

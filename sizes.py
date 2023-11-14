@@ -28,9 +28,9 @@ class ClothSizes:
     def __dir__(self):
         return " "
 
-    def __init__(self, sizes: list[Size], name) -> None:
-        self.sizes = sizes
-        self.name = name
+    def __init__(self, path) -> None:
+        self.sizes = ClothSizes.read_clothing(path)
+        self.name = path[6:-5]
 
     @property
     def name(self):
@@ -50,7 +50,7 @@ class ClothSizes:
             raise ValueError("Clothing sizes not found")
         self._sizes = sizes
 
-    # method
+    # METHODS
     def get_shortsize(self, size_name: str):
         size = self.get_size(size_name)
         if size is not None:

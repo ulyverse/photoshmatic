@@ -1,3 +1,18 @@
+V 2.0.0
+ADDED
+	- multipsd support
+	- filter by document
+	- support for Excel(xlsx) files
+
+CHANGED
+	- Algorithm for filling layers, improved speed by 40 percent and above
+	- Improved remarks reporting message error feedbacks more accurately
+	- Improved remarks (precise parameter error feedback)
+
+BUGFIX
+	- uppercase columns in csv not working.
+
+
 V 1.0.3 
 ADDED
 	- filtering by gender

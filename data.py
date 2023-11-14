@@ -11,14 +11,20 @@ def __dir__():
 
 
 class PandasDataTable:
-    def __init__(self, path, encoding):
+    def __init__(self, path, encoding="mbcs"):
         self.set_dataframe(path, encoding)
 
     @property
     def columns(self):
         return self.__dataframe.columns
 
-    # Methods
+    # METHODS
+    def apply(self, column, function):
+        if not self.does_column_exist(column):
+            raise ValueError(f"{column} does not exist in the datatable")
+
+        self.__dataframe = self.__dataframe[self.__dataframe[column].apply(function)]
+
     def at(self, row, col):
         return self.__dataframe.at[row, col]
 
@@ -29,6 +35,9 @@ class PandasDataTable:
         return column_name.lower() in self.columns
 
     def filter(self, column, where: str | list[str] | None, drop_option: bool = True):
+        if not self.does_column_exist(column):
+            raise ValueError(f"{column} does not exist in the datatable")
+
         condition = Helper.get_condition(where)
         self.filter_isin(column, condition, drop_option)
 
@@ -43,8 +52,11 @@ class PandasDataTable:
         """
         return column_name.lower() if self.does_column_exist(column_name) else None
 
-    def is_empty(self, value):
+    def is_na(self, value):
         return value == ""
+
+    def is_empty(self):
+        return len(self.__dataframe.index) == 0
 
     def iterate_rows(self):
         for row in self.__dataframe.iterrows():
@@ -52,16 +64,23 @@ class PandasDataTable:
 
     def print(self):
         """
-        only allowed in development
+        for development use only
         """
         print(self.__dataframe)
 
-    def set_dataframe(self, path, encoding):
+    def set_dataframe(self, path: str, encoding):
         """
         creates a dataframe that has the columns set to str and lowercased, and replaces the empty cell with ""
         """
         try:
-            self.__dataframe = pd.read_csv(path, encoding=encoding, dtype=str)
+            dataframe = None
+            if path.endswith(".csv"):
+                dataframe = pd.read_csv(path, encoding=encoding, dtype=str)
+            elif path.endswith(".xlsx"):
+                dataframe = pd.read_excel(path, dtype=str)
+            else:
+                raise Exception("Incorrect file type")
+            self.__dataframe = dataframe
             self.__dataframe.columns = self.columns.str.lower()
             self.__dataframe.fillna("", inplace=True)
         except EmptyDataError:

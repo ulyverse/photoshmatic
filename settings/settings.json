@@ -9,8 +9,18 @@
         "description": "for users who separates sizes by documents",
         "resize_image": true,
         "sizes": [
-            "3XS",
-            "2XS",
+            [
+                "3XS",
+                "3Xsmall"
+            ],
+            [
+                "2XS",
+                "2Xsmall"
+            ],
+            [
+                "XS",
+                "Xsmall"
+            ],
             [
                 "S",
                 "Small"
@@ -23,10 +33,18 @@
                 "L",
                 "Large"
             ],
-            "XS",
-            "XL",
-            "2XL",
-            "3XL"
+            [
+                "XL",
+                "Xlarge"
+            ],
+            [
+                "2XL",
+                "2Xlarge"
+            ],
+            [
+                "3XL",
+                "3Xlarge"
+            ]
         ]
     },
     "naming_preference": {
