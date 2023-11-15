@@ -22,6 +22,9 @@ class PhotomaticCoreEngine:
 
     def __init__(self, resize_image=Config.get_sc_resize_image()) -> None:
         self.resize_image = resize_image
+        self.__workspace = None
+        self.__datatable = None
+        self.__cloth_sizes = None
 
     @property
     def cloth_sizes(self) -> ClothSizes | None:
@@ -76,19 +79,21 @@ class PhotomaticCoreEngine:
     def __check_parameter_error(self):
         if self.workspace is None:
             raise TypeError("App is None")
+        if self.datatable is None:
+            raise TypeError("Data is None")
 
         error = set()
         for layer in self.workspace.iterate_layers():
-            if not self.workspace.is_text_layer(layer):
-                continue
-
             layer_name = layer.name.split()
 
             if len(layer_name) == 1:
                 continue
 
             is_param_error = (
-                True if self.workspace.get_max_length(layer_name[1]) is None else False
+                True
+                if layer_name[0] in self.datatable.columns
+                and self.workspace.get_max_length(layer_name[1]) is None
+                else False
             )
             if is_param_error and layer.name not in error:
                 error.add(layer.name)
