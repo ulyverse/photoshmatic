@@ -28,11 +28,29 @@ class PandasDataTable:
     def at(self, row, col):
         return self.__dataframe.at[row, col]
 
+    def change_size(self, column):
+        if not self.does_column_exist(column):
+            raise ValueError(f"{column} does not exist in the datatable")
+
+        delimeter = ":"
+
+        condition = self.__dataframe[column].str.contains(delimeter)
+
+        target_has_size = True in condition.values
+
+        if target_has_size:
+            self.__dataframe.loc[condition, "size"] = (
+                self.__dataframe[column].str.split(delimeter).str.get(1).str.strip()
+            )
+
     def does_column_exist(self, column_name: str) -> bool:
         """
         returns true if column_name exist in the dataframe's column else false
         """
         return column_name.lower() in self.columns
+
+    def drop(self, columns):
+        self.__dataframe.drop(columns=columns, inplace=True, errors="ignore")
 
     def filter(self, column, where: str | list[str] | None, drop_option: bool = True):
         if not self.does_column_exist(column):
@@ -68,7 +86,7 @@ class PandasDataTable:
         """
         print(self.__dataframe)
 
-    def set_dataframe(self, path: str, encoding):
+    def set_dataframe(self, path, encoding):
         """
         creates a dataframe that has the columns set to str and lowercased, and replaces the empty cell with ""
         """

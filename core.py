@@ -140,6 +140,12 @@ class PhotomaticCoreEngine:
     def __create_outputfolder(self, folder_path):
         Path(folder_path).mkdir(exist_ok=True)
 
+    def drop_clothes(self, columns: list[str]):
+        if self.datatable is None:
+            raise TypeError("Datatable is None")
+
+        self.datatable.drop(columns)
+
     def extract_size_in_file(self, document_name: str) -> str | list | None:
         """
         gets the size in a file, i.e, 'small - mydesign.psd' returns small, small could also be s
@@ -160,14 +166,15 @@ class PhotomaticCoreEngine:
         if self.datatable is None:
             raise TypeError("Datatable is None")
 
-        def contains_cloth(value: str, condition):
-            ls = value.split(",")
-            for item in ls:
-                if item.strip() == condition:
-                    return True
+        if not self.datatable.does_column_exist(target_cloth):
             return False
 
-        self.datatable.apply("clothes", lambda s: contains_cloth(s, target_cloth))
+        self.datatable.apply(target_cloth, lambda s: target_cloth.lower() in s.lower())
+
+        if self.datatable.does_column_exist("size"):
+            self.datatable.change_size(target_cloth)
+
+        return True
 
     def filter_by_gender(self, gender: Gender):
         if self.datatable is None:
@@ -185,11 +192,19 @@ class PhotomaticCoreEngine:
         self.datatable.filter("gender", condition)
         return True
 
-    def filter_by_size(self, size_name: str | list[str] | None):
+    def filter_by_size(self):
         if self.datatable is None:
             raise TypeError("Datatable is None")
 
-        self.datatable.filter("size", size_name, drop_option=False)
+        if self.resize_image is False and self.workspace is not None:
+            size_in_file = self.extract_size_in_file(self.workspace.document_name)
+            if size_in_file is None:
+                raise ValueError(
+                    rf"Missing size in document's file name: {self.workspace.document_name}"
+                )
+            self.datatable.filter("size", size_in_file, drop_option=False)
+        elif self.workspace is None:
+            raise TypeError("App is None")
 
     def has_clothes_column(self):
         if self.datatable is None:
@@ -240,16 +255,6 @@ class PhotomaticCoreEngine:
     def open_datatable(self, datatable_path):
         self.datatable = datatable_path
 
-        if self.resize_image is False and self.workspace is not None:
-            size_in_file = self.extract_size_in_file(self.workspace.document_name)
-            if size_in_file is None:
-                raise ValueError(
-                    rf"Missing size in document's file name: {self.workspace.document_name}"
-                )
-            self.filter_by_size(size_in_file)
-        elif self.workspace is None:
-            raise TypeError("App is None")
-
     def open_size(self, file_path: str):
         if file_path == "" or self.resize_image is False:
             return
@@ -277,14 +282,14 @@ class PhotomaticCoreEngine:
         if self.datatable is None:
             raise TypeError("Datatable is None")
 
+        self.filter_by_size()
         self.__transform_datatable(text_settings)
 
         log = ""
-        d_row, d_col = None, None
+        debug_row, debug_col = None, None
         try:
             if self.datatable.is_empty():
                 return ""
-
             log = f"Starting document: {self.workspace.document_name}\n"
 
             folder_path = self.__create_folderpath()
@@ -302,13 +307,13 @@ class PhotomaticCoreEngine:
                 self.workspace.save_state()
 
                 row_idx = row[0]
-                d_row = row_idx
+                debug_row = row_idx
                 row_num = (row[1][0] if idx_exist else row_idx) + 1  # type: ignore
 
                 for col, cell in row[1].items():
                     if col == "index":
                         continue
-                    d_col = col
+                    debug_col = col
                     self.workspace.fill_layers(col, cell)  # type: ignore
 
                 if self.resize_image is True and self.datatable.does_column_exist(
@@ -322,7 +327,9 @@ class PhotomaticCoreEngine:
 
                     size_found = self.__change_doc_size(size)
                     if size_found is False:
-                        log += f"picture #{row_num} size not found\n"
+                        log += (
+                            f"picture #{row_num} size not found, cell value: {size}\n"
+                        )
 
                 # create file
                 file_format = self.__create_fileformat(row_idx)
@@ -337,8 +344,8 @@ class PhotomaticCoreEngine:
             self.workspace.close()
         except Exception as e:
             log += repr(e)
-            if d_row is not None and d_col is not None:
-                log += f"\nStopped at column: {d_col} row: {d_row} cell: {self.datatable.at(d_row, d_col)}\n"
+            if debug_row is not None and debug_col is not None:
+                log += f"\nStopped at column: {debug_col} row: {debug_row} cell: {self.datatable.at(debug_row, debug_col)}\n"
             raise Exception(log)
         return log
 
@@ -391,11 +398,11 @@ class ClothModel:
         self._sizes = value
 
     # METHODS
-    # def __str__(self) -> str:
-    #     """
-    #     for development use only
-    #     """
-    #     return rf"filter = {self.name} design: {self.design} sizes: {self.sizes}"
+    def __str__(self):
+        """
+        for development use only
+        """
+        return rf"filter = {self.name} design: {self.design} sizes: {self.sizes} ({self.has_sizes()}) ({len(self.sizes)})"
 
     def has_sizes(self) -> bool:
         return len(self.sizes) > 0
@@ -440,6 +447,9 @@ class PhotomaticModel:
             if model.has_sizes() is False:
                 return False
         return True
+
+    def count(self):
+        return len(self.clothes)
 
     def get(self, index) -> ClothModel | None:
         if index < 0 or index >= len(self.clothes):
@@ -515,12 +525,12 @@ class PhotomaticController:
         return self._photomatic_engine
 
     @property
-    def photomatic_model(self) -> PhotomaticModel:
+    def model(self) -> PhotomaticModel:
         return self._photomatic_model
 
     # METHODS
     def create_model(self, document_path: Path):
-        self.photomatic_model.add(ClothModel(document_path.name, document_path))
+        self.model.add(ClothModel(document_path.name, document_path))
 
     def create_models(self, documents: dict[str, Path | list[Path]]):
         models = list()
@@ -530,7 +540,7 @@ class PhotomaticController:
             elif isinstance(value, list):
                 for doc in value:
                     models.append(ClothModel(key, doc))
-        self.photomatic_model.add_range(models)
+        self.model.add_range(models)
 
     def has_document(self, directory) -> bool:
         folder = os.listdir(directory)
@@ -577,7 +587,7 @@ class PhotomaticController:
             return 0
 
     def select_lineup(self, data_path):
-        self.photomatic_model.lineup = data_path
+        self.model.lineup = data_path
 
     def start(
         self,
@@ -586,21 +596,28 @@ class PhotomaticController:
         filter_by_gender: Gender | None = None,
     ):
         log = ""
-        if self.photomatic_model.lineup == "":
+        if self.model.lineup == "":
             raise TypeError("Data is None")
-        if self.photomatic_model.is_empty():
+        if self.model.is_empty():
             raise ValueError("Please select a design file or folder")
 
-        for clothes in self.photomatic_model.iter_clothes():
+        for clothes in self.model.iter_clothes():
             try:
                 self.engine.initialize_components(
-                    str(clothes.design), clothes.sizes, self.photomatic_model.lineup
+                    str(clothes.design), clothes.sizes, self.model.lineup
                 )
 
-                if self.engine.has_clothes_column():
-                    self.engine.filter_by_clothes(clothes.name)
+                if (
+                    not self.engine.filter_by_clothes(clothes.name)
+                    and self.model.count() > 1
+                ):
+                    log += f"{clothes.name} not found in the lineup column, proceeding to the next document\n"
+                    continue
+
                 if filter_by_gender is not None:
                     self.engine.filter_by_gender(filter_by_gender)
+
+                self.engine.drop_clothes(list(self.model.get_choices()))
                 log += self.engine.start(cmyk, text_settings)
             except Exception as e:
                 error_message = str(e)

@@ -199,16 +199,16 @@ class PhotomaticWindowApp(ctk.CTkFrame):
         messagebox.showinfo("Photmatic", "Your trail has expired")
 
     def select_doc(self, path):
-        self.photomatic_controller.photomatic_model.clear()
+        self.photomatic_controller.model.clear()
         if self.photomatic_controller.select_document(path) == 0:
             messagebox.showinfo("Photomatic", "No documents found")
-        return self.photomatic_controller.photomatic_model
+        return self.photomatic_controller.model
 
     def start(self):
         cmyk = True if self.start_frame.check_convert_cmyk.get() == 1 else False
         gender = Helper.find_gender(self.start_frame.cmb_gender.get())
         t_transform = Helper.find_textsetting(self.start_frame.cmb_text_transform.get())
-        model = self.photomatic_controller.photomatic_model
+        model = self.photomatic_controller.model
 
         if model.is_empty():
             messagebox.showerror("Photomatic", "Please select document/s")
@@ -425,7 +425,7 @@ class ClothManagerFrame(ctk.CTkFrame):
         self.remove_document()
         self.cmb_sizes.reset()
         self.clothes_frame = ClothesListFrame(
-            self, clothes, self.app.photomatic_controller.photomatic_model
+            self, clothes, self.app.photomatic_controller.model
         )
         self.clothes_frame.grid(row=1, column=0)
 
@@ -462,7 +462,7 @@ class ClothManagerFrame(ctk.CTkFrame):
         if value == "-- select size --":
             return
 
-        model = self.app.photomatic_controller.photomatic_model
+        model = self.app.photomatic_controller.model
         current_cloth = model.find(self.clothes_frame.selected.get())
         if current_cloth is not None:
             current_cloth.sizes = rf"sizes/{value}.json"
