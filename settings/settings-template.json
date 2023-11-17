@@ -1,6 +1,7 @@
 {
     "instructions": "please restart the app to after making changes to settings.json",
     "ps_version": "2023",
+    "close_document": true,
     "app_name": "PHOTOMATIC",
     "jpg_quality": 12,
     "rulerunit_preference": "in",
