@@ -2,6 +2,7 @@ V 2.0.0
 ADDED
 	- multipsd support
 	- filter by document
+	- settings tab
 	- support for Excel(xlsx) files
 
 CHANGED

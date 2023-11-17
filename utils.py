@@ -30,6 +30,10 @@ class Helper:
         return str1.lower() == str2.lower()
 
     @classmethod
+    def check_key(cls, key, dictionary):
+        return True if key in dictionary else False
+
+    @classmethod
     def extract_json(cls, json_path, name):
         try:
             with open(json_path, "r") as file:
@@ -38,6 +42,11 @@ class Helper:
             raise Exception(f"File: {name}, {repr(e)}")
         except FileNotFoundError as e:
             raise Exception(f"{name} is missing")
+
+    @classmethod
+    def set_json(cls, path, json_object):
+        with open(path, "w") as file:
+            json.dump(json_object, file, indent=4)
 
     # SETUP HELPER
     @classmethod

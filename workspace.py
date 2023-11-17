@@ -43,6 +43,14 @@ class PhotoshopWorkspace:
         return self.application.activeDocument
 
     @property
+    def document_file_path(self):
+        return self.__document_file_path
+
+    @document_file_path.setter
+    def document_file_path(self, value):
+        self.__document_file_path = value
+
+    @property
     def document_name(self):
         return self.document.name
 
@@ -182,7 +190,9 @@ class PhotoshopWorkspace:
         for layer in self.layers:
             yield layer
 
-    def open(self, path):
+    def open(self, path: str | None = None):
+        if path is None:
+            path = self.document_file_path
         self.application.open(path)
 
     def print(self):

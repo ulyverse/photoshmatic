@@ -20,8 +20,10 @@ class PhotomaticCoreEngine:
     def __dir__(self):
         return " "
 
-    def __init__(self, resize_image=Config.get_sc_resize_image()) -> None:
-        self.resize_image = resize_image
+    def __init__(self, resize_image: bool | None = None) -> None:
+        self.resize_image = (
+            resize_image if resize_image is not None else Config.get_resize_image()
+        )
         self.__workspace = None
         self.__datatable = None
         self.__cloth_sizes = None
@@ -169,7 +171,9 @@ class PhotomaticCoreEngine:
         if not self.datatable.does_column_exist(target_cloth):
             return False
 
-        self.datatable.apply(target_cloth, lambda s: target_cloth.lower() in s.lower())
+        target_cloth = target_cloth.lower()
+
+        self.datatable.apply(target_cloth, lambda s: target_cloth in s.lower())
 
         if self.datatable.does_column_exist("size"):
             self.datatable.change_size(target_cloth)
@@ -231,7 +235,7 @@ class PhotomaticCoreEngine:
         datatable_path: str,
     ):
         try:
-            self.open_design(workspace_path)
+            self.initialize_workspace(workspace_path)
             self.open_size(clothing_path)
             self.open_datatable(datatable_path)
         except Exception as e:
@@ -261,13 +265,13 @@ class PhotomaticCoreEngine:
 
         self.cloth_sizes = file_path
 
-    def open_design(self, path):
+    def initialize_workspace(self, path):
         self.workspace = PhotoshopWorkspace(
             version=Config.get_ps_version(),
             ruler_unit=Config.get_rulerunit_preference(),
             image_quality=Config.get_jpg_quality(),
         )
-        self.workspace.open(path)
+        self.workspace.document_file_path = path
 
     def start(
         self,
@@ -282,6 +286,7 @@ class PhotomaticCoreEngine:
         if self.datatable is None:
             raise TypeError("Datatable is None")
 
+        self.workspace.open()
         self.filter_by_size()
         self.__transform_datatable(text_settings)
 
@@ -289,6 +294,8 @@ class PhotomaticCoreEngine:
         debug_row, debug_col = None, None
         try:
             if self.datatable.is_empty():
+                if Config.get_close_document() is True:
+                    self.workspace.close()
                 return ""
             log = f"Starting document: {self.workspace.document_name}\n"
 
@@ -342,6 +349,9 @@ class PhotomaticCoreEngine:
                     self.workspace.convert_cmyk(path)
 
             self.workspace.close()
+
+            if Config.get_close_document() is True:
+                self.workspace.close()
         except Exception as e:
             log += repr(e)
             if debug_row is not None and debug_col is not None:

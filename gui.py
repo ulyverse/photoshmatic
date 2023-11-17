@@ -16,6 +16,7 @@ import warnings
 # custom modules
 import setup
 from configuration import Config
+from configuration import SettingsManager
 from core import PhotomaticController
 from utils import Helper
 
@@ -213,7 +214,7 @@ class PhotomaticWindowApp(ctk.CTkFrame):
         if model.is_empty():
             messagebox.showerror("Photomatic", "Please select document/s")
 
-        elif Config.get_sc_resize_image() and not model.complete():
+        elif Config.get_resize_image() and not model.complete():
             messagebox.showerror("Photomatic", "Please select sizes for all documents")
 
         elif model.lineup == "":
@@ -232,6 +233,86 @@ class PhotomaticWindowApp(ctk.CTkFrame):
             messagebox.showinfo("Success", "Done")
 
 
+class SettingsTopLevel(ctk.CTkToplevel):
+    def __dir__(self):
+        return " "
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.title("Photomatic")
+        self.resizable(False, False)
+        self.grab_set()
+        self.settings = SettingsManager()
+        padding_y = (0, 10)
+
+        self.app = ctk.CTkFrame(self, fg_color="transparent")
+        self.app.pack(pady=20, padx=20)
+        self.app_name = MyTextBoxFrame(
+            self.app, "Application Name:", "PHOTOMATIC", width=200
+        )
+        self.app_name.pack(padx=(7, 0), pady=padding_y)
+        self.ps_version = MyComboboxFrame(
+            self.app,
+            "Photoshop Version:",
+            ["auto-detect", "2023", "2022", "2021", "2020", "2019", "2018", "2017"],
+            width=200,
+        )
+        self.ps_version.pack(pady=padding_y)
+        self.check_resize_image = ctk.CTkCheckBox(self.app, text="Resize Image")
+        self.check_resize_image.pack(pady=padding_y)
+        self.check_close_document = ctk.CTkCheckBox(
+            self.app, text="Close document/s after finishing the operation"
+        )
+        self.check_close_document.pack(pady=padding_y)
+        self.btn_save = ctk.CTkButton(self.app, text="SAVE", command=self.save)
+        self.btn_save.pack(pady=10)
+        self.btn_exit = ctk.CTkButton(
+            self.app,
+            text="EXIT",
+            fg_color="#BA1A20",
+            hover_color="#871216",
+            command=self.exit,
+        )
+        self.btn_exit.pack(pady=(0, 10))
+
+        self.lbl_note = ctk.CTkLabel(
+            self,
+            text="Note: you need to restart the app to apply changes.",
+        )
+        self.lbl_note.pack(pady=padding_y, padx=20)
+
+        self.app_name.set(Config.get_app_name())
+
+        version = Config.get_ps_version()
+        self.ps_version.set(version if version is not None else "auto-detect")
+
+        if Config.get_resize_image():
+            self.check_resize_image.select()
+        if Config.get_close_document():
+            self.check_close_document.select()
+
+        self.protocol("WM_DELETE_WINDOW", self.save)
+
+    def exit(self):
+        self.destroy()
+
+    def save(self):
+        answer = messagebox.askyesnocancel("Photomatic", "Do you want to save changes?")
+        if answer == ctk.YES:
+            self.settings.set_application_name(self.app_name.get())
+            self.settings.set_ps_version(self.ps_version.get())
+            self.settings.set_resize_image(
+                True if self.check_resize_image.get() == 1 else False
+            )
+            self.settings.set_close_document(
+                True if self.check_close_document.get() == 1 else False
+            )
+            self.settings.save()
+            self.destroy()
+        elif answer == ctk.NO:
+            self.destroy()
+
+
 class HeaderFrame(ctk.CTkFrame):
     def __dir__(self):
         return " "
@@ -244,6 +325,23 @@ class HeaderFrame(ctk.CTkFrame):
             font=ctk.CTkFont("Arial", 32, weight="bold", slant="italic"),
         )
         self.app_title.pack(side="right")
+
+        self.btn_settings = ctk.CTkButton(
+            self,
+            text="",
+            command=self.open_settings,
+            cursor="hand2",
+            width=25,
+            fg_color="transparent",
+            hover=False,
+            image=PhotoImage(file=r"res/settings-button.png"),
+        )
+        self.btn_settings.pack(side="left")
+
+    def open_settings(self):
+        settings = SettingsTopLevel()
+        self.master.wait_window(settings)
+        Config.refresh()
 
 
 class RemarksFrame(ctk.CTkFrame):
@@ -291,18 +389,35 @@ class RemarksFrame(ctk.CTkFrame):
         self.remarks.configure(state="disabled")
 
 
+class MyTextBoxFrame(ctk.CTkFrame):
+    def __init__(self, master, label_name, text_value="", width=140):
+        super().__init__(master, fg_color="transparent")
+
+        self.lbl_name = ctk.CTkLabel(self, text=label_name)
+        self.lbl_name.pack(side="left", padx=(0, 5))
+        self.value = StringVar(self, text_value)
+        self.txt_value = ctk.CTkEntry(self, textvariable=self.value, width=width)
+        self.txt_value.pack(side="left")
+
+    def get(self):
+        return self.value.get()
+
+    def set(self, value):
+        self.value.set(value)
+
+
 class MyComboboxFrame(ctk.CTkFrame):
     def __dir__(self):
         return " "
 
-    def __init__(self, master, name, values, command=None):
+    def __init__(self, master, name, values, command=None, width=140):
         super().__init__(master, fg_color="transparent")
         self.values = values
         self.label = ctk.CTkLabel(self, text=name)
         self.label.pack(side="left", padx=(0, 5))
 
         self.combobox = ctk.CTkComboBox(
-            self, values=values, state="readonly", command=command
+            self, values=values, state="readonly", command=command, width=width
         )
         self.combobox.pack(side="left")
         self.combobox.set(values[0])
@@ -414,7 +529,7 @@ class ClothManagerFrame(ctk.CTkFrame):
         )
         self.cmb_sizes.pack(side="left")
 
-        if Config.get_sc_resize_image() is False:
+        if Config.get_resize_image() is False:
             self.cmb_sizes.configure("disabled")
 
         self.lbl_total = ctk.CTkLabel(self.cloth_model_frame, text="")
@@ -437,7 +552,7 @@ class ClothManagerFrame(ctk.CTkFrame):
     def select(self, path):
         model = self.app.select_doc(path)
         if len(model.clothes) > 0:
-            if Config.get_sc_resize_image():
+            if Config.get_resize_image():
                 self.populate_document(model.get_designs())
             else:
                 self.populate_document(model.get_choices())
@@ -516,7 +631,7 @@ class ClothesListFrame(ctk.CTkScrollableFrame):
 
     def select(self, selected):
         current_clothes = self.photomatic_model.find(selected.get())
-        if Config.get_sc_resize_image() is True:
+        if Config.get_resize_image() is True:
             if current_clothes.sizes != "":
                 self.handler.cmb_sizes.set(current_clothes.sizes[6:-5])
             else:
