@@ -117,11 +117,9 @@ class PhotomaticCoreEngine:
         file_name = "_".join(file_info)
         return file_name
 
-    def __create_filepath(self, folder_path, row_num, file_row_names):
+    def __create_fullname(self, folder_path, row_num):
         # create file path
         path = rf"{folder_path}\{row_num}"
-        if file_row_names != "":
-            path += f"- {file_row_names}"
 
         return path
 
@@ -168,14 +166,14 @@ class PhotomaticCoreEngine:
         if self.datatable is None:
             raise TypeError("Datatable is None")
 
-        if not self.datatable.does_column_exist(target_cloth):
+        if not self.datatable.has_column(target_cloth):
             return False
 
         target_cloth = target_cloth.lower()
 
         self.datatable.apply(target_cloth, lambda s: target_cloth in s.lower())
 
-        if self.datatable.does_column_exist("size"):
+        if self.datatable.has_column("size"):
             self.datatable.change_size(target_cloth)
 
         return True
@@ -190,13 +188,13 @@ class PhotomaticCoreEngine:
         elif gender == Gender.FEMALE:
             condition = ["F", "Girl", "Female"]
 
-        if not self.datatable.does_column_exist("gender") or condition is None:
+        if not self.datatable.has_column("gender") or condition is None:
             return False
 
         self.datatable.filter("gender", condition)
         return True
 
-    def filter_by_size(self):
+    def __filter_by_size(self):
         if self.datatable is None:
             raise TypeError("Datatable is None")
 
@@ -214,7 +212,7 @@ class PhotomaticCoreEngine:
         if self.datatable is None:
             raise TypeError("Datatable is None")
 
-        return self.datatable.does_column_exist("clothes")
+        return self.datatable.has_column("clothes")
 
     def __get_fileformat_columns(self):
         # THIS CAN BE CACHED?
@@ -224,7 +222,7 @@ class PhotomaticCoreEngine:
         format_col = ["name", "size", Config.get_np_number_preference()]
         existing_col = []
         for fcol in format_col:
-            if self.datatable.does_column_exist(fcol):
+            if self.datatable.has_column(fcol):
                 existing_col.append(fcol)
         return existing_col
 
@@ -287,7 +285,7 @@ class PhotomaticCoreEngine:
             raise TypeError("Datatable is None")
 
         self.workspace.open()
-        self.filter_by_size()
+        self.__filter_by_size()
         self.__transform_datatable(text_settings)
 
         log = ""
@@ -296,7 +294,7 @@ class PhotomaticCoreEngine:
             if self.datatable.is_empty():
                 if Config.get_close_document() is True:
                     self.workspace.close()
-                return ""
+                return log
             log = f"Starting document: {self.workspace.document_name}\n"
 
             folder_path = self.__create_folderpath()
@@ -308,7 +306,7 @@ class PhotomaticCoreEngine:
 
             self.workspace.create_document_placeholder()
 
-            idx_exist = self.datatable.does_column_exist("index")
+            idx_exist = self.datatable.has_column("index")
 
             for row in self.datatable.iterate_rows():
                 self.workspace.save_state()
@@ -317,15 +315,23 @@ class PhotomaticCoreEngine:
                 debug_row = row_idx
                 row_num = (row[1][0] if idx_exist else row_idx) + 1  # type: ignore
 
+                # fill layers
                 for col, cell in row[1].items():
                     if col == "index":
                         continue
                     debug_col = col
                     self.workspace.fill_layers(col, cell)  # type: ignore
 
-                if self.resize_image is True and self.datatable.does_column_exist(
-                    "size"
-                ):
+                # create filename
+                file_format = self.__create_fileformat(row_idx)
+                file_name = str(row_num)
+                if file_format != "":
+                    file_name += f"- {file_format}"
+
+                self.workspace.fill_layers("filename", file_name)
+
+                # change size
+                if self.resize_image is True and self.datatable.has_column("size"):
                     size = self.datatable.at(row_idx, "size")
                     if not self.datatable.is_na(size):
                         shortsize = self.cloth_sizes.get_shortsize(size)  # type: ignore
@@ -338,11 +344,9 @@ class PhotomaticCoreEngine:
                             f"picture #{row_num} size not found, cell value: {size}\n"
                         )
 
-                # create file
-                file_format = self.__create_fileformat(row_idx)
-                path = self.__create_filepath(folder_path, row_num, file_format)
+                # save file
+                path = self.__create_fullname(folder_path, file_name)
                 self.workspace.save_as(path)
-
                 self.workspace.revert_state()
 
                 if convert_cmyk:
