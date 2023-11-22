@@ -20,7 +20,7 @@ class PandasDataTable:
 
     # METHODS
     def apply(self, column, function):
-        if not self.does_column_exist(column):
+        if not self.has_column(column):
             raise ValueError(f"{column} does not exist in the datatable")
 
         self.__dataframe = self.__dataframe[self.__dataframe[column].apply(function)]
@@ -29,7 +29,7 @@ class PandasDataTable:
         return self.__dataframe.at[row, col]
 
     def change_size(self, column):
-        if not self.does_column_exist(column):
+        if not self.has_column(column):
             raise ValueError(f"{column} does not exist in the datatable")
 
         delimeter = ":"
@@ -43,7 +43,7 @@ class PandasDataTable:
                 self.__dataframe[column].str.split(delimeter).str.get(1).str.strip()
             )
 
-    def does_column_exist(self, column_name: str) -> bool:
+    def has_column(self, column_name: str) -> bool:
         """
         returns true if column_name exist in the dataframe's column else false
         """
@@ -53,7 +53,7 @@ class PandasDataTable:
         self.__dataframe.drop(columns=columns, inplace=True, errors="ignore")
 
     def filter(self, column, where: str | list[str] | None, drop_option: bool = True):
-        if not self.does_column_exist(column):
+        if not self.has_column(column):
             raise ValueError(f"{column} does not exist in the datatable")
 
         condition = Helper.get_condition(where)
@@ -63,12 +63,6 @@ class PandasDataTable:
         df = self.__dataframe
         self.__dataframe = df[df[column].isin(condition)]
         self.__dataframe.reset_index(drop=drop_option, inplace=True)
-
-    def get_column(self, column_name: str):
-        """
-        returns the lowercase of column_name or None if doesn't exist
-        """
-        return column_name.lower() if self.does_column_exist(column_name) else None
 
     def is_na(self, value):
         return value == ""
