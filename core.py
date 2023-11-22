@@ -560,10 +560,9 @@ class PhotomaticController:
         return False
 
     def is_document(self, file) -> bool:
-        filetypes = {".psd", ".tif", ".crd"}
-        for filetype in filetypes:
-            if file.endswith(filetype):
-                return True
+        filetypes = (".psd", ".tif", ".crd")
+        if file.endswith(filetypes):
+            return True
         return False
 
     def scan_root_document(self, root_path: str) -> dict[str, Path | list[Path]]:

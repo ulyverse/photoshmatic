@@ -334,7 +334,7 @@ class HeaderFrame(ctk.CTkFrame):
             width=25,
             fg_color="transparent",
             hover=False,
-            image=PhotoImage(file=r"res/settings-button.png"),
+            image=PhotoImage(file=r"res/settings.png"),
         )
         self.btn_settings.pack(side="left")
 
