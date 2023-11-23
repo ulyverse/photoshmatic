@@ -3,6 +3,9 @@ res/
 settings/settings.json
 practice.py
 
+sizes/*
+!sizes/template.json
+
 
 
 # Byte-compiled / optimized / DLL files
