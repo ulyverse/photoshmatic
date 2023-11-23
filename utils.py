@@ -108,8 +108,10 @@ class Helper:
         return gender
 
     @classmethod
-    def populate_sizes(cls):
-        sizes = ["-- select size --"]
+    def populate_sizes(cls, headings=None):
+        sizes = []
+        if headings is not None:
+            sizes.append(headings)
         for size in os.listdir("sizes/"):
             sizes.append(size[:-5])
         return sizes
@@ -122,6 +124,15 @@ class Helper:
         return txtset
 
     # PURE HELPER
+    @classmethod
+    def get_size_path(cls, name: str) -> str:
+        return rf"sizes/{name}.json"
+
+    @classmethod
+    def parse_number(cls, digit: str) -> float | int:
+        num = float(digit)
+        return int(num) if num == int(num) or digit.rstrip("0").endswith(".") else num
+
     @classmethod
     def try_parse(cls, digit: str) -> float | None:
         try:

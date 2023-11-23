@@ -84,3 +84,10 @@ class ClothSizes:
                 )
             )
         return sizes
+
+    @classmethod
+    def write_clothing(cls, sizes_list, file_path):
+        sizes = {}
+        sizes["sizes"] = list()
+        sizes["sizes"].extend(sizes_list)
+        Helper.set_json(file_path, sizes)
