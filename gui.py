@@ -1,6 +1,5 @@
 # dependency modules
 import time
-
 import tkinter as tk
 from pathlib import Path
 from tkinter import BooleanVar
@@ -8,7 +7,6 @@ from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import PhotoImage
 from tkinter import StringVar
-from tkinter import ttk
 from tkinter.simpledialog import askstring
 from requests.exceptions import Timeout
 import customtkinter as ctk
@@ -17,10 +15,12 @@ import warnings
 
 # custom modules
 import setup
+from components import MyComboboxFrame
+from components import MyDataGridView
+from components import MyTextBoxFrame
 from configuration import Config
 from configuration import SettingsManager
 from core import PhotomaticController
-from sizes import ClothSizes
 from utils import Helper
 
 
@@ -198,12 +198,15 @@ class PhotomaticWindowApp(ctk.CTkFrame):
         self.remarks_frame = RemarksFrame(paddingframe)
         self.remarks_frame.pack(fill="x")
 
+    def clear(self):
+        self.photomatic_controller.model.clear()
+
     def expire(self):
         self.master.switch_frame(WelcomeFrame)
         messagebox.showinfo("Photmatic", "Your trail has expired")
 
     def select_doc(self, path):
-        self.photomatic_controller.model.clear()
+        self.clear()
         if self.photomatic_controller.select_document(path) == 0:
             messagebox.showinfo("Photomatic", "No documents found")
         return self.photomatic_controller.model
@@ -326,6 +329,192 @@ class ClothesManagerTopLevel(ctk.CTkToplevel):
         self.resizable(False, False)
         self.grab_set()
 
+        self.margin_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.margin_frame.pack(padx=20, pady=20)
+
+        self.manager_frame = None
+
+        if Config.get_resize_image() is True:
+            self.manager_frame = ClothesManagerResizeFrame(self.margin_frame)
+            self.manager_frame.pack()
+        else:
+            self.manager_frame = ClothesManagerNoResizeFrame(self.margin_frame)
+            self.manager_frame.pack()
+
+
+class ClothesManagerNoResizeFrame(ctk.CTkFrame):
+    def __dir__(self):
+        return " "
+
+    def __init__(self, master):
+        super().__init__(master)
+
+        self.lbl_clothes_name = ctk.CTkLabel(
+            self,
+            text="SIZE MANAGER",
+            font=ctk.CTkFont("Arial", 25, weight="bold"),
+        )
+        self.lbl_clothes_name.grid(
+            row=0, column=0, columnspan=2, sticky="w", padx=20, pady=(20, 0)
+        )
+
+        self.settings_path = "settings/settings.json"
+        self.json = Helper.extract_json(self.settings_path, "settings")
+        sizes = self.json["size_config"]["sizes"]
+
+        column_config = self.get_column_configuration()
+
+        self.dgv = MyDataGridView(self, column_config, sizes)
+        self.dgv.bind_select_event(self.select)
+
+        self.dgv.grid(row=1, column=0, padx=20, pady=(10, 20))
+
+        self.edit_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.edit_frame.grid(row=1, column=1, padx=(0, 20), pady=(10, 0), sticky="n")
+
+        self.txt_shortsize = MyTextBoxFrame(self.edit_frame, "Shortsize:")
+        self.txt_shortsize.grid(row=0, column=0, pady=(0, 5), sticky="e")
+
+        self.txt_size = MyTextBoxFrame(self.edit_frame, "Size:")
+        self.txt_size.grid(row=1, column=0, pady=(0, 5), sticky="e")
+
+        self.btn_update = ctk.CTkButton(
+            self.edit_frame, text="ADD", command=self.update_or_add
+        )
+        self.btn_update.grid(row=4, pady=(0, 5), column=0, sticky="e")
+
+        self.btn_cancel = ctk.CTkButton(
+            self.edit_frame, text="CANCEL", state="disabled", command=self.cancel
+        )
+        self.btn_cancel.grid(row=5, pady=(0, 5), column=0, sticky="e")
+
+        self.btn_remove = ctk.CTkButton(
+            self.edit_frame,
+            text="REMOVE",
+            fg_color="#BA1A20",
+            hover_color="#871216",
+            command=self.delete,
+        )
+        self.btn_remove.grid(row=6, column=0, sticky="e")
+
+        self.option_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.option_frame.grid(
+            row=2, column=0, columnspan=2, sticky="w", padx=(20, 0), pady=(0, 20)
+        )
+
+        self.btn_save = ctk.CTkButton(self.option_frame, text="SAVE", command=self.save)
+        self.btn_save.pack(side="left", padx=(0, 10))
+
+        self.btn_exit = ctk.CTkButton(
+            self.option_frame,
+            text="EXIT",
+            fg_color="#BA1A20",
+            hover_color="#871216",
+            command=self.exit,
+        )
+        self.btn_exit.pack(side="left")
+
+    def cancel(self):
+        self.dgv.deselect_row()
+
+    def clear_entries(self):
+        self.txt_shortsize.delete()
+        self.txt_size.delete()
+
+    def delete(self):
+        self.dgv.delete_row()
+
+    def exit(self):
+        if self.master.master is None:
+            return
+        self.master.master.destroy()
+
+    def get_column_configuration(self):
+        column_config = list()
+        column_config.append(
+            {"name": "shortsize", "text": None, "width": 95, "anchor": None}
+        )
+        column_config.append(
+            {"name": "size", "text": None, "width": 95, "anchor": None}
+        )
+
+        return column_config
+
+    def get_entry_values(self):
+        return (
+            self.txt_shortsize.get(),
+            self.txt_size.get(),
+        )
+
+    def select(self):
+        self.clear_entries()
+
+        values = self.dgv.get_selected_values()
+        if values is None:
+            self.btn_cancel.configure(state="disabled")
+            self.btn_update.configure(text="ADD")
+            return
+        else:
+            self.btn_cancel.configure(state="normal")
+            self.btn_update.configure(text="UPDATE")
+
+        self.txt_shortsize.set(values[0])
+        self.txt_size.set(values[1])
+
+    def save(self):
+        answer = messagebox.askyesnocancel(
+            "Photomatic", "Do you want to save changes?", icon=messagebox.WARNING
+        )
+        if answer is None:
+            return
+        if answer == ctk.YES:
+            sizes_list = []
+            for values in self.dgv.get_all():
+                sizes_list.append(values)
+
+            self.json["size_config"]["sizes"] = sizes_list
+            Helper.set_json(self.settings_path, self.json)
+        self.exit()
+
+    def add_size(self):
+        values = self.get_entry_values()
+        self.dgv.insert(values)
+        self.clear_entries()
+
+    def update_size(self, item):
+        item = self.dgv.get_selected_item()
+        values = self.get_entry_values()
+        self.dgv.update_row(item, values)
+        self.dgv.deselect_row()
+
+    def update_or_add(self):
+        item = self.dgv.get_selected_item()
+        if self.validate_entries() is False:
+            return
+
+        if item is None:
+            self.add_size()
+        else:
+            self.update_size(item)
+
+    def validate_entries(self):
+        validate = False
+        if self.txt_size.get() == "" and self.txt_shortsize.get() == "":
+            messagebox.showerror(
+                "Photomatic", "Please input atleast one size/shortsize"
+            )
+        else:
+            validate = True
+
+        return validate
+
+
+class ClothesManagerResizeFrame(ctk.CTkFrame):
+    def __dir__(self):
+        return " "
+
+    def __init__(self, master):
+        super().__init__(master)
         self.rowconfigure(index=(0, 2), weight=0)
         self.rowconfigure(index=1, weight=1)
 
@@ -339,9 +528,11 @@ class ClothesManagerTopLevel(ctk.CTkToplevel):
         self.clothes_list.grid(
             row=1, column=0, sticky="ew", rowspan=2, padx=20, pady=(0, 20)
         )
+        self.clothes_list.configure(
+            highlightbackground="#979da2",
+            highlightthickness=2,
+        )
         for list in my_list:
-            if list == "template":
-                continue
             self.clothes_list.insert(ctk.END, list)
 
         self.option_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -400,7 +591,9 @@ class ClothesManagerTopLevel(ctk.CTkToplevel):
             self.clothes_list.delete(item)
 
     def done(self):
-        self.destroy()
+        if self.master.master is None:
+            return
+        self.master.master.destroy()
 
     def get_selected(self):
         return (
@@ -441,37 +634,18 @@ class ClothesEditorTopLevel(ctk.CTkToplevel):
             row=0, column=0, columnspan=2, sticky="w", padx=(20, 0), pady=(20, 0)
         )
 
-        dgv = ttk.Treeview(
-            self,
-            columns=("name", "width", "height", "shortsize"),
-            show="headings",
-            selectmode="browse",
-        )
-        dgv.grid(row=1, column=0, padx=20, pady=(10, 20))
-        dgv.column("name", width=150)
-        dgv.heading("name", text="Size")
+        self.size_path = size_path
+        self.json = Helper.extract_json(size_path, "cloth size file")
+        sizes = self.json["sizes"]
 
-        dgv.column("width", width=75, anchor="center")
-        dgv.heading("width", text="Width")
+        column_config = self.get_column_configuration()
 
-        dgv.column("height", width=75, anchor="center")
-        dgv.heading("height", text="Height")
-
-        dgv.column("shortsize", width=115, anchor="center")
-        dgv.heading("shortsize", text=" shortsize (optional)")
-
-        dgv.bind("<<TreeviewSelect>>", self.select)
-        dgv.bind("<Delete>", self.delete_key)
-
-        sizes_list = Helper.extract_json(size_path, "cloth size file")
-        sizes = sizes_list["sizes"]
-
-        for size in sizes:
-            value = (size["name"], size["width"], size["height"], size["shortsize"])
-            dgv.insert("", index=ctk.END, values=value)
+        self.dgv = MyDataGridView(self, column_config, sizes)
+        self.dgv.bind_select_event(self.select)
+        self.dgv.grid(row=1, column=0, padx=20, pady=(10, 20))
 
         self.edit_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.edit_frame.grid(row=1, column=1, padx=(0, 20))
+        self.edit_frame.grid(row=1, column=1, padx=(0, 20), pady=(10, 0), sticky="n")
 
         self.txt_size = MyTextBoxFrame(self.edit_frame, "Size:")
         self.txt_size.grid(row=0, column=0, pady=(0, 5), sticky="e")
@@ -519,14 +693,10 @@ class ClothesEditorTopLevel(ctk.CTkToplevel):
         )
         self.btn_exit.pack(side="left")
 
-        self.dgv = dgv
         self.protocol("WM_DELETE_WINDOW", self.save)
 
     def cancel(self):
-        item = self.get_selected()
-
-        if item is not None:
-            self.dgv.selection_remove(item)
+        self.dgv.deselect_row()
 
     def clear_entries(self):
         self.txt_size.delete()
@@ -535,34 +705,51 @@ class ClothesEditorTopLevel(ctk.CTkToplevel):
         self.txt_shortsize.delete()
 
     def delete(self):
-        item = self.get_selected()
-        if item is not None and messagebox.askyesno(
-            "Photomatic", "Are you sure you want to remove item?"
-        ):
-            self.dgv.delete(item)
-
-    def delete_key(self, event):
-        self.delete()
+        self.dgv.delete_row()
 
     def exit(self):
         self.destroy()
 
-    def get_selected(self):
-        return self.dgv.selection()[0] if len(self.dgv.selection()) > 0 else None
+    def get_column_configuration(self):
+        column_config = list()
+        column_config.append(
+            {"name": "name", "text": "Size", "width": 150, "anchor": "w"}
+        )
+        column_config.append(
+            {"name": "width", "text": None, "width": 75, "anchor": None}
+        )
+        column_config.append(
+            {"name": "height", "text": None, "width": 75, "anchor": None}
+        )
+        column_config.append(
+            {
+                "name": "shortsize",
+                "text": "Shortsize (optional)",
+                "width": 115,
+                "anchor": None,
+            }
+        )
+        return column_config
 
-    def select(self, event):
+    def get_entry_values(self):
+        return (
+            self.txt_size.get(),
+            self.txt_width.get(),
+            self.txt_height.get(),
+            self.txt_shortsize.get(),
+        )
+
+    def select(self):
         self.clear_entries()
 
-        item = self.get_selected()
-        if item is None:
+        values = self.dgv.get_selected_values()
+        if values is None:
             self.btn_cancel.configure(state="disabled")
             self.btn_update.configure(text="ADD")
             return
         else:
             self.btn_cancel.configure(state="normal")
             self.btn_update.configure(text="UPDATE")
-
-        values = self.dgv.item(item, "values")
 
         self.txt_size.set(values[0])
         self.txt_width.set(values[1])
@@ -577,42 +764,30 @@ class ClothesEditorTopLevel(ctk.CTkToplevel):
             return
         if answer == ctk.YES:
             sizes_list = []
-            for children in self.dgv.get_children():
-                values = self.dgv.item(children, "values")
+            for values in self.dgv.get_all():
                 size = {}
                 size["name"] = values[0]
                 size["width"] = Helper.parse_number(values[1])
                 size["height"] = Helper.parse_number(values[2])
                 size["shortsize"] = values[3]
                 sizes_list.append(size)
+            self.json["sizes"] = sizes_list
 
-            ClothSizes.write_clothing(sizes_list, self.size_path)
+            Helper.set_json(self.size_path, self.json)
         self.destroy()
 
     def add_size(self):
-        value = (
-            self.txt_size.get(),
-            self.txt_width.get(),
-            self.txt_height.get(),
-            self.txt_shortsize.get(),
-        )
-        self.dgv.insert("", ctk.END, values=value)
+        values = self.get_entry_values()
+        self.dgv.insert(values)
         self.clear_entries()
 
     def update_size(self, item):
-        self.dgv.item(
-            item,
-            values=(
-                self.txt_size.get(),
-                self.txt_width.get(),
-                self.txt_height.get(),
-                self.txt_shortsize.get(),
-            ),
-        )
-        self.dgv.selection_remove(item)
+        values = self.get_entry_values()
+        self.dgv.update_row(item, values)
+        self.dgv.deselect_row()
 
     def update_or_add(self):
-        item = self.get_selected()
+        item = self.dgv.get_selected_item()
         if self.validate_entries() is False:
             return
 
@@ -664,7 +839,6 @@ class HeaderFrame(ctk.CTkFrame):
             self,
             text="",
             command=self.open_settings,
-            cursor="hand2",
             width=25,
             fg_color="transparent",
             hover=False,
@@ -678,7 +852,6 @@ class HeaderFrame(ctk.CTkFrame):
             fg_color="#6e7174",
             hover_color="#6e7174",
             command=self.open_clothes_manager,
-            cursor="hand2",
         )
         self.btn_manage_sizes.pack(side="left")
 
@@ -735,55 +908,6 @@ class RemarksFrame(ctk.CTkFrame):
         self.remarks.configure(state="normal")
         self.remarks.delete("1.0", ctk.END)
         self.remarks.configure(state="disabled")
-
-
-class MyTextBoxFrame(ctk.CTkFrame):
-    def __init__(self, master, label_name, text_value="", width=140):
-        super().__init__(master, fg_color="transparent")
-
-        self.lbl_name = ctk.CTkLabel(self, text=label_name)
-        self.lbl_name.pack(side="left", padx=(0, 5))
-        self.value = StringVar(self, text_value)
-        self.txt_value = ctk.CTkEntry(self, textvariable=self.value, width=width)
-        self.txt_value.pack(side="left")
-
-    def delete(self):
-        self.value.set("")
-
-    def get(self):
-        return self.value.get()
-
-    def set(self, value):
-        self.value.set(value)
-
-
-class MyComboboxFrame(ctk.CTkFrame):
-    def __dir__(self):
-        return " "
-
-    def __init__(self, master, name, values, command=None, width=140):
-        super().__init__(master, fg_color="transparent")
-        self.values = values
-        self.label = ctk.CTkLabel(self, text=name)
-        self.label.pack(side="left", padx=(0, 5))
-
-        self.combobox = ctk.CTkComboBox(
-            self, values=values, state="readonly", command=command, width=width
-        )
-        self.combobox.pack(side="left")
-        self.combobox.set(values[0])
-
-    def configure(self, state):
-        self.combobox.configure(state=state)
-
-    def get(self):
-        return self.combobox.get()
-
-    def set(self, value):
-        self.combobox.set(value)
-
-    def reset(self):
-        self.set(self.values[0])
 
 
 class DatatableFrame(ctk.CTkFrame):
@@ -858,25 +982,26 @@ class ClothManagerFrame(ctk.CTkFrame):
     def __init__(self, master, app: PhotomaticWindowApp):
         super().__init__(master, fg_color="#cfcfcf")
         self.app = app
-        self.cloth_model_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.cloth_model_frame.grid(row=0, column=0, sticky="we", pady=10)
+        self.columnconfigure(index=0, weight=1)
+        self.margin_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.margin_frame.grid(row=0, column=0, sticky="we", pady=10)
 
-        self.btn_selectpsd = ctk.CTkButton(
-            self.cloth_model_frame,
+        self.btn_select_document = ctk.CTkButton(
+            self.margin_frame,
             text="Select Document",
             command=self.select_document,
         )
-        self.btn_selectpsd.pack(side="left", padx=10)
+        self.btn_select_document.pack(side="left", padx=(14, 10))
 
-        self.btn_selectpsd = ctk.CTkButton(
-            self.cloth_model_frame,
+        self.btn_select_folder = ctk.CTkButton(
+            self.margin_frame,
             text="Select Folder",
             command=self.select_documents,
         )
-        self.btn_selectpsd.pack(side="left", padx=(0, 25))
+        self.btn_select_folder.pack(side="left", padx=(0, 25))
 
         self.cmb_sizes = MyComboboxFrame(
-            self.cloth_model_frame,
+            self.margin_frame,
             "Sizes",
             Helper.populate_sizes("-- select size --"),
             self.select_sizes,
@@ -886,9 +1011,25 @@ class ClothManagerFrame(ctk.CTkFrame):
         if Config.get_resize_image() is False:
             self.cmb_sizes.configure("disabled")
 
-        self.lbl_total = ctk.CTkLabel(self.cloth_model_frame, text="")
+        self.btn_clear = ctk.CTkButton(
+            self.margin_frame,
+            text="Clear",
+            fg_color="#6e7174",
+            hover_color="#6e7174",
+            width=100,
+            command=self.clear,
+        )
+        self.btn_clear.pack(side="right", padx=(0, 14))
+
+        self.lbl_total = ctk.CTkLabel(self.margin_frame, text="")
         self.lbl_total.pack(side="right", padx=(0, 10))
         self.clothes_frame = None
+
+    def clear(self):
+        self.remove_document()
+        self.cmb_sizes.reset()
+        self.app.clear()
+        self.update_total_items(0)
 
     def populate_document(self, clothes):
         self.remove_document()

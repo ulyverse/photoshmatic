@@ -113,7 +113,10 @@ class Helper:
         if headings is not None:
             sizes.append(headings)
         for size in os.listdir("sizes/"):
-            sizes.append(size[:-5])
+            name = size[:-5]
+            if name == "template":
+                continue
+            sizes.append(name)
         return sizes
 
     @classmethod

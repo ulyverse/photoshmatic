@@ -1,9 +1,17 @@
+V 2.1.0
+ADDED
+	- Size manager 
+	- Clear button to quickly remove all the selected document/s
+	- "filename" layer which fills a layer with the current output name 
+	i.e, item - name_size_number.
+	- Option to append "item#" to row number in output
+
 V 2.0.0
 ADDED
-	- multipsd support
-	- filter by document
-	- settings tab
-	- support for Excel(xlsx) files
+	- Multipsd support
+	- Filter by document
+	- Settings tab
+	- Support for Excel(xlsx) files
 
 CHANGED
 	- Algorithm for filling layers, improved speed by 40 percent and above
@@ -12,15 +20,15 @@ CHANGED
 	- Improved remarks (precise parameter error feedback)
 
 BUGFIX
-	- uppercase columns in csv not working.
+	- Uppercase columns in csv not working.
 
 
 V 1.0.3 
 ADDED
-	- filtering by gender
+	- Filtering by gender
 
 BUGFIX
-	- not properly adjusting text size if the vertical/horizontal scale isn't 100
+	- Not properly adjusting text size if the vertical/horizontal scale isn't 100
 
 
 V 1.0.2 hotfix
@@ -38,13 +46,13 @@ CHANGED
 BUGFIX
 	- Incorrect name output due to csv sometimes
 	- Empty Layers like " " would crash the app
-	- hidden layer will not be included anymore
+	- Hidden layer will not be included anymore
 
 V 1.0.1
 ADDED
 	- One Size per PSD option
-	- app name preference
-	- ruler unit preference
+	- App name preference
+	- Ruler unit preference
 
 V 1.0.0
 Initial Release

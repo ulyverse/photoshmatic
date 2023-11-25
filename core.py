@@ -117,9 +117,9 @@ class PhotomaticCoreEngine:
         file_name = "_".join(file_info)
         return file_name
 
-    def __create_fullname(self, folder_path, row_num):
+    def __create_fullname(self, folder_path, file_name):
         # create file path
-        path = rf"{folder_path}\{row_num}"
+        path = rf"{folder_path}\{file_name}"
 
         return path
 
