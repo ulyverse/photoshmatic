@@ -375,7 +375,7 @@ class ClothesManagerNoResizeFrame(ctk.CTkFrame):
         self.txt_shortsize = MyTextBoxFrame(self.edit_frame, "Shortsize:")
         self.txt_shortsize.grid(row=0, column=0, pady=(0, 5), sticky="e")
 
-        self.txt_size = MyTextBoxFrame(self.edit_frame, "Size:")
+        self.txt_size = MyTextBoxFrame(self.edit_frame, "Size (optional):")
         self.txt_size.grid(row=1, column=0, pady=(0, 5), sticky="e")
 
         self.btn_update = ctk.CTkButton(
@@ -459,7 +459,8 @@ class ClothesManagerNoResizeFrame(ctk.CTkFrame):
             self.btn_update.configure(text="UPDATE")
 
         self.txt_shortsize.set(values[0])
-        self.txt_size.set(values[1])
+        if len(values) > 1:
+            self.txt_size.set(values[1])
 
     def save(self):
         answer = messagebox.askyesnocancel(
@@ -470,6 +471,7 @@ class ClothesManagerNoResizeFrame(ctk.CTkFrame):
         if answer == ctk.YES:
             sizes_list = []
             for values in self.dgv.get_all():
+                values = [value for value in values if value != ""]
                 sizes_list.append(values)
 
             self.json["size_config"]["sizes"] = sizes_list
@@ -499,10 +501,8 @@ class ClothesManagerNoResizeFrame(ctk.CTkFrame):
 
     def validate_entries(self):
         validate = False
-        if self.txt_size.get() == "" and self.txt_shortsize.get() == "":
-            messagebox.showerror(
-                "Photomatic", "Please input atleast one size/shortsize"
-            )
+        if self.txt_shortsize.get() == "":
+            messagebox.showerror("Photomatic", "Please input a shortsize")
         else:
             validate = True
 
