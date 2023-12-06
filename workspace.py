@@ -74,11 +74,13 @@ class PhotoshopWorkspace:
     def apply_parameter(self, max_length, param=""):
         layer_dimension = self.get_current_layer_dimension()
         horizontal = self.is_current_layer_horizontal()
-        orientation = (
-            Dimension.WIDTH
-            if horizontal and not Helper.compare_insensitive(param, "h")
-            else Dimension.HEIGHT
-        )
+        orientation = None
+        if (
+            horizontal or Helper.compare_insensitive(param, "w")
+        ) and not Helper.compare_insensitive(param, "h"):
+            orientation = Dimension.WIDTH
+        else:
+            orientation = Dimension.HEIGHT
 
         if self.exceed_max_length(layer_dimension[orientation], max_length):
             ratio = (

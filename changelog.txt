@@ -1,10 +1,13 @@
+V 2.1.1
+BUGFIX
+	- Vertical text with the canvas turned 90 degrees by using the width parameter "w="
+
 V 2.1.0
 ADDED
 	- Size manager 
 	- Clear button to quickly remove all the selected document/s
 	- "filename" layer which fills a layer with the current output name 
-	i.e, item - name_size_number.
-	- Option to append "item#" to row number in output
+	i.e, itemnumber - name_size_number.
 
 V 2.0.0
 ADDED
