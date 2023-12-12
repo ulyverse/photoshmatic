@@ -270,6 +270,17 @@ class SettingsTopLevel(ctk.CTkToplevel):
             self.app, text="Close document/s after finishing the operation"
         )
         self.check_close_document.pack(pady=padding_y)
+
+        self.check_folder_name = ctk.CTkCheckBox(
+            self.app, text="Include Folder Name (output)"
+        )
+        self.check_folder_name.pack(pady=padding_y)
+
+        self.check_document_name = ctk.CTkCheckBox(
+            self.app, text="Include Document Name (output)"
+        )
+        self.check_document_name.pack(pady=padding_y)
+
         self.btn_save = ctk.CTkButton(self.app, text="SAVE", command=self.save)
         self.btn_save.pack(pady=10)
         self.btn_exit = ctk.CTkButton(
@@ -292,10 +303,14 @@ class SettingsTopLevel(ctk.CTkToplevel):
         version = Config.get_ps_version()
         self.ps_version.set(version if version is not None else "auto-detect")
 
-        if Config.get_resize_image():
+        if Config.get_resize_image() is True:
             self.check_resize_image.select()
-        if Config.get_close_document():
+        if Config.get_close_document() is True:
             self.check_close_document.select()
+        if Config.get_fn_document_name() is True:
+            self.check_document_name.select()
+        if Config.get_fn_folder_name() is True:
+            self.check_folder_name.select()
 
         self.protocol("WM_DELETE_WINDOW", self.save)
 
@@ -308,10 +323,16 @@ class SettingsTopLevel(ctk.CTkToplevel):
             self.settings.set_application_name(self.app_name.get())
             self.settings.set_ps_version(self.ps_version.get())
             self.settings.set_resize_image(
-                True if self.check_resize_image.get() == 1 else False
+                Helper.convert_to_bool(self.check_resize_image.get())
             )
             self.settings.set_close_document(
-                True if self.check_close_document.get() == 1 else False
+                Helper.convert_to_bool(self.check_close_document.get())
+            )
+            self.settings.set_fn_document_name(
+                Helper.convert_to_bool(self.check_document_name.get())
+            )
+            self.settings.set_fn_folder_name(
+                Helper.convert_to_bool(self.check_folder_name.get())
             )
             self.settings.save()
             self.destroy()
@@ -558,7 +579,8 @@ class ClothesManagerResizeFrame(ctk.CTkFrame):
 
     def add(self):
         file_name = self.txt_name.get()
-        if file_name == "":
+        if file_name.strip() == "":
+            messagebox.showinfo("Photomatic", "Please enter a name")
             return
 
         if file_name in Helper.populate_sizes():
@@ -566,10 +588,15 @@ class ClothesManagerResizeFrame(ctk.CTkFrame):
                 "Photomatic", f"{file_name} already exist, please choose another name."
             )
             return
+        size_template = None
+        try:
+            size_template = Helper.extract_json("sizes/template.json", "template")
+        except:
+            messagebox.showerror("Photomatic", "Template.json is missing")
+            return
 
-        template = Helper.extract_json("sizes/template.json", "template")
         path = Helper.get_size_path(file_name)
-        Helper.set_json(path, template)
+        Helper.set_json(path, size_template)
 
         self.clothes_list.insert(ctk.END, file_name)
         self.txt_name.delete()

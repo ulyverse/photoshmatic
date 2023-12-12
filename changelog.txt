@@ -1,3 +1,11 @@
+V 2.2.0
+ADDED
+	- Option to include document name in the image's name(output)
+	- Option to include project folder name in image's name(output)
+
+CHANGED
+	- Moved output images to a dedicated output folder
+
 V 2.1.1
 BUGFIX
 	- Vertical text with the canvas turned 90 degrees by using the width parameter "w="
@@ -6,8 +14,7 @@ V 2.1.0
 ADDED
 	- Size manager 
 	- Clear button to quickly remove all the selected document/s
-	- "filename" layer which fills a layer with the current output name 
-	i.e, itemnumber - name_size_number.
+	- "filename" layer which fills a layer with the current image's name(output)
 
 V 2.0.0
 ADDED

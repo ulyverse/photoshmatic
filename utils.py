@@ -128,7 +128,11 @@ class Helper:
 
     # PURE HELPER
     @classmethod
-    def get_size_path(cls, name: str) -> str:
+    def convert_to_bool(cls, number: int | str):
+        return True if number == 1 else False
+
+    @classmethod
+    def get_size_path(cls, name: str):
         return rf"sizes/{name}.json"
 
     @classmethod

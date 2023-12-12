@@ -6,6 +6,10 @@
     "jpg_quality": 12,
     "rulerunit_preference": "in",
     "char_encoding": "",
+    "file_name": {
+        "folder_name": false,
+        "document_name": true
+    },
     "size_config": {
         "description": "for users who separates sizes by documents",
         "resize_image": true,

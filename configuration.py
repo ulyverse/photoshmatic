@@ -50,6 +50,18 @@ class Config:
         )
 
     @classmethod
+    def get_fn_document_name(cls):
+        if cls.is_empty():
+            cls.load_config()
+        return cls.data["file_name"]["document_name"]
+
+    @classmethod
+    def get_fn_folder_name(cls):
+        if cls.is_empty():
+            cls.load_config()
+        return cls.data["file_name"]["folder_name"]
+
+    @classmethod
     def get_jpg_quality(cls):
         if cls.is_empty():
             cls.load_config()
@@ -104,20 +116,28 @@ class SettingsManager:
     def save(self):
         Helper.set_json(self.settings_path, self.settings)
 
-    def set_application_name(self, value):
+    def set_application_name(self, value: str):
         if isinstance(value, str):
             self.settings["app_name"] = value
 
-    def set_close_document(self, value):
+    def set_close_document(self, value: bool):
         if isinstance(value, bool):
             self.settings["close_document"] = value
 
-    def set_ps_version(self, value):
+    def set_ps_version(self, value: str):
         if isinstance(value, str):
             if value == "auto-detect":
                 value = ""
             self.settings["ps_version"] = value
 
-    def set_resize_image(self, value):
+    def set_resize_image(self, value: bool):
         if isinstance(value, bool):
             self.settings["size_config"]["resize_image"] = value
+
+    def set_fn_folder_name(self, value: bool):
+        if isinstance(value, bool):
+            self.settings["file_name"]["folder_name"] = value
+
+    def set_fn_document_name(self, value: bool):
+        if isinstance(value, bool):
+            self.settings["file_name"]["document_name"] = value
