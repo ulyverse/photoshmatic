@@ -153,6 +153,10 @@ class PhotoshopWorkspace:
         dimension[Dimension.HEIGHT] = bounds[3] - bounds[1]
         return dimension
 
+    def get_document_name(self):
+        """this strips out the file type"""
+        return self.document_name.split(".")[0]
+
     def get_horizontal_scale(self):
         return self.current_layer.textItem.horizontalScale
 

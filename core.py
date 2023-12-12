@@ -28,6 +28,9 @@ class PhotomaticCoreEngine:
         self.__datatable = None
         self.__cloth_sizes = None
 
+        self.__project_name = None
+        self.__output_path = None
+
     @property
     def cloth_sizes(self) -> ClothSizes | None:
         return self.__cloth_sizes
@@ -45,6 +48,22 @@ class PhotomaticCoreEngine:
         self.__datatable = PandasDataTable(
             value, encoding=Config.get_character_encoding()
         )
+
+    @property
+    def output_path(self) -> str | None:
+        return self.__output_path
+
+    @output_path.setter
+    def output_path(self, value):
+        self.__output_path = value
+
+    @property
+    def project_name(self) -> str | None:
+        return self.__project_name
+
+    @project_name.setter
+    def project_name(self, value):
+        self.__project_name = value
 
     @property
     def resize_image(self) -> bool:
@@ -103,7 +122,29 @@ class PhotomaticCoreEngine:
         if len(error) > 0:
             return error
 
-    def __create_fileformat(self, row):
+    def __create_filename(self, item_number, item_name):
+        if self.workspace is None:
+            raise TypeError("App is None")
+
+        file_name = ""
+        if Config.get_fn_folder_name() is True:
+            file_name += f"{self.project_name} - "
+
+        file_name += f"#{item_number} - "
+        if item_name != "":
+            file_name += f"{item_name}"
+
+        if Config.get_fn_document_name() is True:
+            file_name += f" - {self.workspace.get_document_name()}"
+
+        return file_name
+
+    def __create_fullname(self, folder_path, file_name):
+        path = rf"{folder_path}\{file_name}"
+
+        return path
+
+    def __create_itemname(self, row):
         # OPTIMIZE THIS, IT UNEFFICIENTLY CALLING OVER AND OVER AGAIN...
         if self.datatable is None:
             raise TypeError("Datatable is None")
@@ -116,29 +157,6 @@ class PhotomaticCoreEngine:
 
         file_name = "_".join(file_info)
         return file_name
-
-    def __create_fullname(self, folder_path, file_name):
-        # create file path
-        path = rf"{folder_path}\{file_name}"
-
-        return path
-
-    def __create_folderpath(self):
-        if self.workspace is None:
-            raise TypeError("App is None")
-
-        psd_name = self.workspace.document_name
-        folder_path = (
-            rf"{str(Path(self.workspace.document_fullname).parent)}\{psd_name[:-4]}"
-        )
-
-        if self.resize_image is True:
-            folder_path += f" - {self.cloth_sizes.name}"  # type: ignore
-
-        return folder_path
-
-    def __create_outputfolder(self, folder_path):
-        Path(folder_path).mkdir(exist_ok=True)
 
     def drop_clothes(self, columns: list[str]):
         if self.datatable is None:
@@ -297,9 +315,6 @@ class PhotomaticCoreEngine:
                 return log
             log = f"Starting document: {self.workspace.document_name}\n"
 
-            folder_path = self.__create_folderpath()
-            self.__create_outputfolder(folder_path)
-
             error = self.__check_parameter_error()
             if error is not None:
                 log += f"Parameter invalid in these layers: {error}\n"
@@ -323,10 +338,8 @@ class PhotomaticCoreEngine:
                     self.workspace.fill_layers(col, cell)  # type: ignore
 
                 # create filename
-                file_format = self.__create_fileformat(row_idx)
-                file_name = str(row_num)
-                if file_format != "":
-                    file_name += f"- {file_format}"
+                item_name = self.__create_itemname(row_idx)
+                file_name = self.__create_filename(row_num, item_name)
 
                 self.workspace.fill_layers("filename", file_name)
 
@@ -345,7 +358,7 @@ class PhotomaticCoreEngine:
                         )
 
                 # save file
-                path = self.__create_fullname(folder_path, file_name)
+                path = self.__create_fullname(self.output_path, file_name)
                 self.workspace.save_as(path)
                 self.workspace.revert_state()
 
@@ -533,6 +546,7 @@ class PhotomaticController:
     def __init__(self):
         self._photomatic_engine = PhotomaticCoreEngine()
         self._photomatic_model = PhotomaticModel()
+        self._project_path = None
 
     @property
     def engine(self) -> PhotomaticCoreEngine:
@@ -541,6 +555,14 @@ class PhotomaticController:
     @property
     def model(self) -> PhotomaticModel:
         return self._photomatic_model
+
+    @property
+    def project_path(self) -> Path | None:
+        return self._project_path
+
+    @project_path.setter
+    def project_path(self, value: Path):
+        self._project_path = value
 
     # METHODS
     def create_model(self, document_path: Path):
@@ -590,10 +612,12 @@ class PhotomaticController:
     def select_document(self, path) -> int:
         item = Path(path)
         if item.is_dir():
+            self.project_path = item
             documents = self.scan_root_document(path)
             self.create_models(documents)
             return len(documents)
         elif item.is_file():
+            self.project_path = item.parent
             self.create_model(item)
             return 1
         else:
@@ -613,9 +637,18 @@ class PhotomaticController:
             raise TypeError("Data is None")
         if self.model.is_empty():
             raise ValueError("Please select a design file or folder")
+        if self.project_path is None:
+            raise TypeError("Path is None")
+
+        self.engine.project_name = self.project_path.name
+        project_path = rf"{str(self.project_path)}/output - {self.project_path.name}"
+        Path(project_path).mkdir(exist_ok=True)
 
         for clothes in self.model.iter_clothes():
             try:
+                output_path = rf"{project_path}/{clothes.name}"
+                Path(output_path).mkdir(exist_ok=True)
+                self.engine.output_path = output_path
                 self.engine.initialize_components(
                     str(clothes.design), clothes.sizes, self.model.lineup
                 )
