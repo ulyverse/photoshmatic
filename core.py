@@ -130,12 +130,12 @@ class PhotomaticCoreEngine:
         if Config.get_fn_folder_name() is True:
             file_name += f"{self.project_name} - "
 
+        if Config.get_fn_document_name() is True:
+            file_name += f"{self.workspace.get_document_name()} - "
+
         file_name += f"#{item_number} - "
         if item_name != "":
             file_name += f"{item_name}"
-
-        if Config.get_fn_document_name() is True:
-            file_name += f" - {self.workspace.get_document_name()}"
 
         return file_name
 
@@ -596,7 +596,7 @@ class PhotomaticController:
         for item in os.listdir(root_path):
             item_path = Path(os.path.join(root_path, item))
             item_name = item_path.name
-            if item_path.is_dir():
+            if item_path.is_dir() and not item.startswith("output"):
                 documents[item_name] = self.search_documents(item_path)
             if item_path.is_file() and self.is_document(item_name):
                 documents[item_name] = item_path

@@ -276,11 +276,6 @@ class SettingsTopLevel(ctk.CTkToplevel):
         )
         self.check_folder_name.pack(pady=padding_y)
 
-        self.check_document_name = ctk.CTkCheckBox(
-            self.app, text="Include Document Name (output)"
-        )
-        self.check_document_name.pack(pady=padding_y)
-
         self.btn_save = ctk.CTkButton(self.app, text="SAVE", command=self.save)
         self.btn_save.pack(pady=10)
         self.btn_exit = ctk.CTkButton(
@@ -307,8 +302,6 @@ class SettingsTopLevel(ctk.CTkToplevel):
             self.check_resize_image.select()
         if Config.get_close_document() is True:
             self.check_close_document.select()
-        if Config.get_fn_document_name() is True:
-            self.check_document_name.select()
         if Config.get_fn_folder_name() is True:
             self.check_folder_name.select()
 
@@ -327,9 +320,6 @@ class SettingsTopLevel(ctk.CTkToplevel):
             )
             self.settings.set_close_document(
                 Helper.convert_to_bool(self.check_close_document.get())
-            )
-            self.settings.set_fn_document_name(
-                Helper.convert_to_bool(self.check_document_name.get())
             )
             self.settings.set_fn_folder_name(
                 Helper.convert_to_bool(self.check_folder_name.get())
