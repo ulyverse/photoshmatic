@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import subprocess
 import uuid
 
 
@@ -90,16 +91,38 @@ class Helper:
 
         return set()
 
+    # SETUP HELPER
+    @classmethod
+    def get_disk_serial_number(cls):
+        """returns the serial number of the first disk (alphabetical)"""
+        return (
+            subprocess.check_output("wmic diskdrive get serialnumber")
+            .decode()
+            .split("\n")[1]
+            .strip()
+        )
+
+    @classmethod
+    def get_hardware_id(cls):
+        return (
+            subprocess.check_output("wmic csproduct get uuid")
+            .decode()
+            .split("\n")[1]
+            .strip()
+        )
+
     @classmethod
     def get_mac_address(cls):
         return ":".join(("%012X" % uuid.getnode())[i : i + 2] for i in range(0, 12, 2))
 
-    # SETUP HELPER
     @classmethod
     def get_uniq_identifier(cls):
-        return hashlib.md5(
-            (cls.get_mac_address() + "hehexd").encode("utf-8")
-        ).hexdigest()
+        machine_identifier = cls.get_hardware_id()
+        if Helper.compare_insensitive(
+            machine_identifier, "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"
+        ):
+            machine_identifier = cls.get_disk_serial_number()
+        return hashlib.md5((machine_identifier + "hehexd").encode("utf-8")).hexdigest()
 
     # GUI CMB PHOTOMATIC
     @classmethod

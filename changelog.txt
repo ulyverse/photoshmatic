@@ -1,3 +1,7 @@
+V 2.3.0
+BUGFIX
+	- Asking for Keycode after activation
+
 V 2.2.0
 ADDED
 	- Option to include document name in the image's name(output)
