@@ -56,6 +56,12 @@ class Config:
         return cls.data["file_name"]["document_name"]
 
     @classmethod
+    def get_fn_document_name_before_row_name(cls):
+        if cls.is_empty():
+            cls.load_config()
+        return cls.data["file_name"]["document_name_before_row_name"]
+
+    @classmethod
     def get_fn_folder_name(cls):
         if cls.is_empty():
             cls.load_config()
@@ -134,10 +140,14 @@ class SettingsManager:
         if isinstance(value, bool):
             self.settings["size_config"]["resize_image"] = value
 
-    def set_fn_folder_name(self, value: bool):
-        if isinstance(value, bool):
-            self.settings["file_name"]["folder_name"] = value
-
     def set_fn_document_name(self, value: bool):
         if isinstance(value, bool):
             self.settings["file_name"]["document_name"] = value
+
+    def set_fn_document_name_before_row_name(self, value: bool):
+        if isinstance(value, bool):
+            self.settings["file_name"]["document_name_before_row_name"] = value
+
+    def set_fn_folder_name(self, value: bool):
+        if isinstance(value, bool):
+            self.settings["file_name"]["folder_name"] = value

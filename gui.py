@@ -276,6 +276,11 @@ class SettingsTopLevel(ctk.CTkToplevel):
         )
         self.check_folder_name.pack(pady=padding_y)
 
+        self.check_document_name_before_row_name = ctk.CTkCheckBox(
+            self.app, text="Put document name before row name"
+        )
+        self.check_document_name_before_row_name.pack(pady=padding_y)
+
         self.btn_save = ctk.CTkButton(self.app, text="SAVE", command=self.save)
         self.btn_save.pack(pady=10)
         self.btn_exit = ctk.CTkButton(
@@ -304,6 +309,8 @@ class SettingsTopLevel(ctk.CTkToplevel):
             self.check_close_document.select()
         if Config.get_fn_folder_name() is True:
             self.check_folder_name.select()
+        if Config.get_fn_document_name_before_row_name() is True:
+            self.check_document_name_before_row_name.select()
 
         self.protocol("WM_DELETE_WINDOW", self.save)
 
@@ -323,6 +330,9 @@ class SettingsTopLevel(ctk.CTkToplevel):
             )
             self.settings.set_fn_folder_name(
                 Helper.convert_to_bool(self.check_folder_name.get())
+            )
+            self.settings.set_fn_document_name_before_row_name(
+                Helper.convert_to_bool(self.check_document_name_before_row_name.get())
             )
             self.settings.save()
             self.destroy()
