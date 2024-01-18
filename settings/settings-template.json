@@ -8,7 +8,8 @@
     "char_encoding": "",
     "file_name": {
         "folder_name": false,
-        "document_name": true
+        "document_name": true,
+        "document_name_before_row_name": false
     },
     "size_config": {
         "description": "for users who separates sizes by documents",

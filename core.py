@@ -130,12 +130,21 @@ class PhotomaticCoreEngine:
         if Config.get_fn_folder_name() is True:
             file_name += f"{self.project_name} - "
 
-        if Config.get_fn_document_name() is True:
+        if (
+            Config.get_fn_document_name() is True
+            and Config.get_fn_document_name_before_row_name() is True
+        ):
             file_name += f"{self.workspace.get_document_name()} - "
 
         file_name += f"#{item_number} - "
         if item_name != "":
             file_name += f"{item_name}"
+
+        if (
+            Config.get_fn_document_name() is True
+            and Config.get_fn_document_name_before_row_name() is False
+        ):
+            file_name += f" - {self.workspace.get_document_name()}"
 
         return file_name
 
